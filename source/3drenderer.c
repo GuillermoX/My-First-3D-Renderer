@@ -15,6 +15,7 @@ int last_frame_time;
 SDL_Window* gp_window;
 SDL_Renderer* gp_renderer;
 
+//List of boolean state of the keys used
 bool gp_keys[NUM_OF_KEYS];
 
 //--------- OBJECTS OF THE SCENE -------------------------------------------
@@ -36,7 +37,7 @@ void start_scene(scene_t* scene)
 
 	//Set the basic initial parameters
 	scene->running = true;
-	strcpy(scene->name, "GPSceneCreator");
+	strcpy(scene->name, "3D Renderer");
 
 	//Here you can change the scene initial parameters
 	scene->window.height = 700;
@@ -49,9 +50,11 @@ void start_scene(scene_t* scene)
 	scene->camera.fov = 90.0f;
 	scene->camera.aspect_ratio = (float)scene->window.height / (float)scene->window.width;
 
+	//Start the simple illumination
 	scene->light.x = 0;
 	scene->light.y = 0;
 	scene->light.z = -1;	
+	//Normalize ilumination vector
 	float l_lenth = sqrt(scene->light.x*scene->light.x + scene->light.y*scene->light.y + scene->light.z*scene->light.z);
 	scene->light.x /= l_lenth; scene->light.y /= l_lenth; scene->light.z /= l_lenth;
 
@@ -213,13 +216,6 @@ void render_scene(scene_t* scene)
 
 	render_meshes(scene, meshes);
 
-
-	/*screen_vect_t v1, v2, v3;
-	v1.x = 300;	v1.y = 100;
-	v2.x = 500;	v2.y = 100;
-	v3.x = 900;	v3.y = 300;
-	GPC_paint_triangle(scene, v1, v2 , v3);*/
-	
 	//Show the final render result
 	SDL_RenderPresent(gp_renderer);
 }
@@ -228,23 +224,31 @@ void render_scene(scene_t* scene)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-//		3D RENDERER FUNCTIONS							///
+//		3D MANIPULATION FUNCTIONS						///
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 void initialize_meshes(mesh_t meshes[])
 {
+	//Open the .obj file
 	FILE* f = fopen("./object.obj", "r");
 	if(f != NULL)
 	{	
+		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
 		vec3d_t verts[2000];
+
+		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
+
+		//Initialize at 1 because .obj file starts counting the first vertex as 1
 		int vert_i = 1;
+
+		//Index of the vertex of a triangle
 		int i_v1, i_v2, i_v3;
 
 		//Initialize the number of triangles of the mesh to 0
 		meshes[0].n_tris = 0;
 
-		//Load all the vertex to a buffer
+		//Load all the vertex to a buffer and the faces/triangles to the mesh
 		while (!feof(f))
 		{
 			fscanf(f, "%c ", &type_line);
@@ -346,13 +350,19 @@ void initialize_meshes(mesh_t meshes[])
 
 int compare_depth_tris(const void* tri1_p, const void* tri2_p)
 {
+	//Return value
 	int ret;
-	float z1, z2;
 
+	//Comparing depth
+	float z1, z2;
+	
+	//Convert the const void pointer to const triangle_t pointer
 	const triangle_t* tri1 = tri1_p;
 	const triangle_t* tri2 = tri2_p;
 
+	//Get the average of the three Z of each vertex of a triangle
 	z1 = (tri1->vertex[0].z + tri1->vertex[1].z + tri1->vertex[2].z) / 3.0f;
+	//Do the same for the second triangle
 	z2 = (tri2->vertex[0].z + tri2->vertex[1].z + tri2->vertex[2].z) / 3.0f;
 
 	if(z1 == z2){ ret = 0;}
@@ -393,8 +403,6 @@ void render_meshes(scene_t* scene, mesh_t meshes[])
 
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 {	
-	float h_height= scene->window.height/2.0f;
-	float h_width = scene->window.width/2.0f;
 
 	triangle_t tri_proj, tri_rotZ, tri_rotZX, tri_trans;
 	
@@ -421,39 +429,53 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	tri_trans.vertex[1].z = tri_rotZX.vertex[1].z + 20;
 	tri_trans.vertex[2].z = tri_rotZX.vertex[2].z + 20;
 	
-	//Calculate the normal normalized (between 0 and 1)
+	// ------ Calculate the normal normalized (between 0 and 1) -----
 	vec3d_t normal, line1, line2;
-	
+
+	//Calculate the vector from v0 -> v1
 	line1.x = tri_trans.vertex[1].x - tri_trans.vertex[0].x;
 	line1.y = tri_trans.vertex[1].y - tri_trans.vertex[0].y;
 	line1.z = tri_trans.vertex[1].z - tri_trans.vertex[0].z;
 
+	//Calculate the vector from v0 -> v2
 	line2.x = tri_trans.vertex[2].x - tri_trans.vertex[0].x;
 	line2.y = tri_trans.vertex[2].y - tri_trans.vertex[0].y;
 	line2.z = tri_trans.vertex[2].z - tri_trans.vertex[0].z;
 	
+	//Do the cross product of the two vectors to get a perpendicular vector of both (the normal)
 	normal.x = line1.y*line2.z - line2.y*line1.z;	
 	normal.y = line2.x*line1.z - line1.x*line2.z;	
 	normal.z = line1.x*line2.y - line2.x*line1.y;
 
+	//Normalize the normal vector (
 	float n_lenth = sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
 	normal.x /= n_lenth; normal.y /= n_lenth; normal.z /= n_lenth;
-	
+
+	//If the dot product of the normal and the camera vector is negative it means the angle between both
+	//is greater than 90º, which means it's visible (check page 5 of notes)
 	if((normal.x*(tri_trans.vertex[0].x - scene->camera.pos.x) + 
 	    normal.y*(tri_trans.vertex[0].y - scene->camera.pos.y) + 
 	    normal.z*(tri_trans.vertex[0].z - scene->camera.pos.z)) < 0.0f)
 	{	
-
-		//printf("\nVector 0 pre: %f, %f, %f", tri_trans.vertex[0].x, tri_trans.vertex[0].y, tri_trans.vertex[0].z); 
+		//If the triangle is visible to the camera, proceed to calculate the projection of it
+		//Do the multiplication of the vector of the vertex with the projection matrix
+		//The result is the projection of the vertex at the screen (values between -1 and 1) from the center
 		multiply_vector_matrix(&tri_proj.vertex[0], &(tri_trans.vertex[0]), &proj_matrix);
-		//printf("\nVector 0 post: %f, %f, %f", tri_proj.vertex[0].x, tri_proj.vertex[0].y, tri_proj.vertex[0].z); 
 		multiply_vector_matrix(&tri_proj.vertex[1], &(tri_trans.vertex[1]), &proj_matrix);
 		multiply_vector_matrix(&tri_proj.vertex[2], &(tri_trans.vertex[2]), &proj_matrix);
-
+		
+		//Add 1 so the value is not negative and (0,0) is the top left corner and the range is [0,2]
 		tri_proj.vertex[0].x += 1.0f;	tri_proj.vertex[0].y += 1.0f;
 		tri_proj.vertex[1].x += 1.0f;	tri_proj.vertex[1].y += 1.0f;
 		tri_proj.vertex[2].x += 1.0f;	tri_proj.vertex[2].y += 1.0f;
 		
+		//Get half the hight and width of the screen resolution
+		float h_height= scene->window.height/2.0f;
+		float h_width = scene->window.width/2.0f;
+
+		//Adjust the range from [0,2] to the width and height
+		//Multiply the x value with the width to get the x value in the range of the screen width
+		//For the height is the same but proportional to the width
 		tri_proj.vertex[0].x *= h_width;	tri_proj.vertex[0].y = h_height*2 - tri_proj.vertex[0].y * h_height;
 		tri_proj.vertex[1].x *= h_width;	tri_proj.vertex[1].y = h_height*2 - tri_proj.vertex[1].y * h_height;
 		tri_proj.vertex[2].x *= h_width;	tri_proj.vertex[2].y = h_height*2 - tri_proj.vertex[2].y * h_height;
@@ -463,12 +485,13 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 		tri_ras->vertex[1].x = tri_proj.vertex[1].x;	tri_ras->vertex[1].y = tri_proj.vertex[1].y;	tri_ras->vertex[1].z = tri_proj.vertex[1].z;
 		tri_ras->vertex[2].x = tri_proj.vertex[2].x;	tri_ras->vertex[2].y = tri_proj.vertex[2].y;	tri_ras->vertex[2].z = tri_proj.vertex[2].z;
 		
+		//Get the brightness of the triangle
 		tri_ras->brightness = scene->light.x*normal.x + scene->light.y*normal.y + scene->light.z*normal.z;
 		if (tri_ras->brightness < 0) tri_ras->brightness = 0;
 	}
 	else
-	{
-				
+	{	
+		//In case the triangle is not necessary to raster (is not seen by the camera) set all coords of all vertex to 0	
 		tri_ras->vertex[0].x = 0;	tri_ras->vertex[0].y = 0;	tri_ras->vertex[0].z = 0;
 		tri_ras->vertex[1].x = 0;	tri_ras->vertex[1].y = 0;	tri_ras->vertex[1].z = 0;
 		tri_ras->vertex[2].x = 0;	tri_ras->vertex[2].y = 0;	tri_ras->vertex[2].z = 0;
@@ -480,11 +503,12 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 
 void raster_triangle(scene_t* scene, triangle_t* tri)
 {
-		
+	//Calculate the color depending on the brightness	
 	tri->color.r = 255*tri->brightness;
 	tri->color.g = 0*tri->brightness;
 	tri->color.b = 255/2*tri->brightness;
 
+	//Create a screen vector (2D) for each triangle vertex projection
 	screen_vect_t v1, v2, v3;
 					
 	v1.x = tri->vertex[0].x; v1.y = tri->vertex[0].y;
@@ -495,6 +519,14 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 	printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
 	printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);
 	GPC_paint_triangle(scene, v1, v2, v3, tri->color);
+
+	//Decoment if wanted all triangles borders to be drawn
+	/*
+	SDL_SetRenderDrawColor(gp_renderer, 255, 0, 255/2, 255);
+	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
+	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
+	SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
+	*/	
 }
 
 
@@ -540,58 +572,6 @@ void find_order(screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, screen_vec
 	v_max->x = v_tuple[2].x;
 	v_max->y = v_tuple[2].y;
 
-	/*int min, mid, max;
-
-	if (v1.y >= v2.y && v1.y >= v3.y){max = 1;}
-	else if (v2.y >= v1.y && v2.y >= v3.y) {max = 2;}
-	else if (v3.y >= v1.y && v3.y >= v2.y) {max = 3;}
-	
-	switch (max)
-	{
-		case 1: if(v2.y > v3.y) {mid = 2; min = 3;}
-			else {mid = 3; min = 2;}
-			break;
-
-		case 2: if(v1.y > v3.y) {mid = 1; min = 3;}
-			else {mid = 3; min = 1;}
-			break;
-
-		case 3: if(v1.y > v2.y) {mid = 1; min = 2;}
-			else {mid = 2; min = 1;}
-			break;
-	}
-		
-	switch (max)
-	{
-		case 1: v_max->x = v1.x; v_max->y = v1.y;
-			break;
-		case 2: v_max->x = v2.x; v_max->y = v2.y;
-			break;	
-		case 3: v_max->x = v3.x; v_max->y = v3.y;
-			break;
-	}
-
-
-	switch (mid)
-	{
-		case 1: v_mid->x = v1.x; v_mid->y = v1.y;
-			break;
-		case 2: v_mid->x = v2.x; v_mid->y = v2.y;
-			break;	
-		case 3: v_mid->x = v3.x; v_mid->y = v3.y;
-			break;
-	}
-
-
-	switch (min)
-	{
-		case 1: v_min->x = v1.x; v_min->y = v1.y;
-			break;
-		case 2: v_min->x = v2.x; v_min->y = v2.y;
-			break;	
-		case 3: v_min->x = v3.x; v_min->y = v3.y;
-			break;
-	}*/
 }
 
 
@@ -603,9 +583,6 @@ void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, scre
 
 	//finding the height order of the vertex is possible to divide the triangle at the diag in top triangle and bottom triangle
 	find_order(v1, v2, v3, &v_max, &v_mid, &v_min);	
-	printf("\nvector max (x,y) = (%d, %d)\n", v_max.x, v_max.y);
-	printf("vector mid (x,y) = (%d, %d)\n", v_mid.x, v_mid.y);
-	printf("vector min (x,y) = (%d, %d)\n\n", v_min.x, v_min.y);
 	
 	screen_vect_t v_line1, v_line2;
 	float k1, k2;
