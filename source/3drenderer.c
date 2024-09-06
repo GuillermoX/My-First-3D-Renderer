@@ -230,7 +230,7 @@ void render_scene(scene_t* scene)
 void initialize_meshes(mesh_t meshes[])
 {
 	//Open the .obj file
-	FILE* f = fopen("./object.obj", "r");
+	FILE* f = fopen("./data/object.obj", "r");
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
