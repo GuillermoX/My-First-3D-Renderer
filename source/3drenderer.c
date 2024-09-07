@@ -425,9 +425,9 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	tri_trans.vertex[1].y = tri_rotZX.vertex[1].y + 0.0;
 	tri_trans.vertex[2].y = tri_rotZX.vertex[2].y + 0.0;
 	
-	tri_trans.vertex[0].z = tri_rotZX.vertex[0].z + 20;
-	tri_trans.vertex[1].z = tri_rotZX.vertex[1].z + 20;
-	tri_trans.vertex[2].z = tri_rotZX.vertex[2].z + 20;
+	tri_trans.vertex[0].z = tri_rotZX.vertex[0].z + 80;
+	tri_trans.vertex[1].z = tri_rotZX.vertex[1].z + 80;
+	tri_trans.vertex[2].z = tri_rotZX.vertex[2].z + 80;
 	
 	// ------ Calculate the normal normalized (between 0 and 1) -----
 	vec3d_t normal, line1, line2;
@@ -521,12 +521,13 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 	GPC_paint_triangle(scene, v1, v2, v3, tri->color);
 
 	//Decoment if wanted all triangles borders to be drawn
-	/*
+	/*	
 	SDL_SetRenderDrawColor(gp_renderer, 255, 0, 255/2, 255);
 	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
 	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
 	SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
-	*/	
+	*/
+		
 }
 
 
@@ -641,7 +642,7 @@ void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, scre
 }
 
 
-// -------------------------------- MATH MATRIX FUNCTIONS ----------------------------------------------------------------
+// -------------------------------- MATH VECTOR AND MATRIX FUNCTIONS ----------------------------------------------------------------
 
 void initialize_matrices(scene_t* scene)
 {
@@ -779,14 +780,57 @@ void multiply_vector_matrix(vec3d_t* out, vec3d_t* in, mat4x4_t* mat)
 	}	
 }
 
+void add_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
+{
+	vr->x = v1->x + v2->x;
+	vr->y = v1->y + v2->y;
+	vr->z = v1->z + v2->z;
+}
+
+void sub_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
+{
+	vr->x = v1->x - v2->x;
+	vr->y = v1->y - v2->y;
+	vr->z = v1->z - v2->z;
+}
+
+void vector_mul(vec3d_t* v, float k, vec3d_t* vr)
+{
+	vr->x = v->x*k;
+	vr->y = v->y*k;
+	vr->z = v->z*k;
+}
 
 
+void vector_div(vec3d_t* v, float k, vec3d_t* vr)
+{
+	vr->x = v->x/k;
+	vr->y = v->y/k;
+	vr->z = v->z/k;
+}
 
+float vector_dot_prod(vec3d_t* v1, vec3d_t* v2)
+{
+	return (v1->x*v2->x + v1->y*v2->y + v1->z*v2->z);
+}
 
+float vector_length(vec3d_t* v)
+{
+	return (sqrt(vector_dot_prod(v, v)));
+}
 
+void normalise_vector(vec3d_t* v, vec3d_t* vn)
+{
+	float l = vector_length(v);
+	vector_div(v, l, vn);
+}
 
-
-
+void vector_cross_product(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
+{
+	vr->x = v1->y*v2->z - v1->z*v2->y;
+	vr->y = v1->z*v2->x - v1->x*v2->z;
+	vr->z = v1->x*v2->y - v1->y*v2->x;	
+}
 
 
 
