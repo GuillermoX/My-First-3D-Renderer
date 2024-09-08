@@ -234,7 +234,7 @@ void initialize_meshes(mesh_t meshes[])
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
-		vec3d_t verts[2000];
+		vec3d_t verts[4000];
 
 		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
@@ -255,20 +255,24 @@ void initialize_meshes(mesh_t meshes[])
 			switch (type_line)
 			{
 				case 'v': fscanf(f, "%f %f %f\n", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
+					  verts[vert_i].w = 1.0f;
 					  vert_i ++;
 					break;
 				case 'f': fscanf(f, "%d %d %d\n", &i_v1, &i_v2, &i_v3);
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].x = verts[i_v1].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].y = verts[i_v1].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].z = verts[i_v1].z;
+					  meshes[0].tris[meshes[0].n_tris].vertex[0].w = verts[i_v1].w;
 
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v2].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v2].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v2].z;
+					  meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v1].w;
 
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v3].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v3].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v3].z;
+					  meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v1].w;
 
 					  meshes[0].n_tris ++;
 					break;
@@ -279,72 +283,6 @@ void initialize_meshes(mesh_t meshes[])
 		fclose(f);
 
 	}
-
-
-	//Initialize block mesh
-
-	/*
-	meshes[0].n_tris = 12;
-
-	//SOUTH
-	meshes[0].tris[0].vertex[0].x = 0;	meshes[0].tris[0].vertex[0].y = 0;	meshes[0].tris[0].vertex[0].z = 0;
-	meshes[0].tris[0].vertex[1].x = 0;	meshes[0].tris[0].vertex[1].y = 1;	meshes[0].tris[0].vertex[1].z = 0;
-	meshes[0].tris[0].vertex[2].x = 1;	meshes[0].tris[0].vertex[2].y = 1;	meshes[0].tris[0].vertex[2].z = 0;
-		
-	meshes[0].tris[1].vertex[0].x = 0;	meshes[0].tris[1].vertex[0].y = 0;	meshes[0].tris[1].vertex[0].z = 0;
-	meshes[0].tris[1].vertex[1].x = 1;	meshes[0].tris[1].vertex[1].y = 1;	meshes[0].tris[1].vertex[1].z = 0;
-	meshes[0].tris[1].vertex[2].x = 1;	meshes[0].tris[1].vertex[2].y = 0;	meshes[0].tris[1].vertex[2].z = 0;
-	
-
-	//EAST
-	meshes[0].tris[2].vertex[0].x = 1;	meshes[0].tris[2].vertex[0].y = 0;	meshes[0].tris[2].vertex[0].z = 0;
-	meshes[0].tris[2].vertex[1].x = 1;	meshes[0].tris[2].vertex[1].y = 1;	meshes[0].tris[2].vertex[1].z = 0;
-	meshes[0].tris[2].vertex[2].x = 1;	meshes[0].tris[2].vertex[2].y = 1;	meshes[0].tris[2].vertex[2].z = 1;
-		
-	meshes[0].tris[3].vertex[0].x = 1;	meshes[0].tris[3].vertex[0].y = 0;	meshes[0].tris[3].vertex[0].z = 0;
-	meshes[0].tris[3].vertex[1].x = 1;	meshes[0].tris[3].vertex[1].y = 1;	meshes[0].tris[3].vertex[1].z = 1;
-	meshes[0].tris[3].vertex[2].x = 1;	meshes[0].tris[3].vertex[2].y = 0;	meshes[0].tris[3].vertex[2].z = 1;
-
-
-	//NORTH	
-	meshes[0].tris[4].vertex[0].x = 1;	meshes[0].tris[4].vertex[0].y = 0;	meshes[0].tris[4].vertex[0].z = 1;
-	meshes[0].tris[4].vertex[1].x = 1;	meshes[0].tris[4].vertex[1].y = 1;	meshes[0].tris[4].vertex[1].z = 1;
-	meshes[0].tris[4].vertex[2].x = 0;	meshes[0].tris[4].vertex[2].y = 1;	meshes[0].tris[4].vertex[2].z = 1;
-		
-	meshes[0].tris[5].vertex[0].x = 1;	meshes[0].tris[5].vertex[0].y = 0;	meshes[0].tris[5].vertex[0].z = 1;
-	meshes[0].tris[5].vertex[1].x = 0;	meshes[0].tris[5].vertex[1].y = 1;	meshes[0].tris[5].vertex[1].z = 1;
-	meshes[0].tris[5].vertex[2].x = 0;	meshes[0].tris[5].vertex[2].y = 0;	meshes[0].tris[5].vertex[2].z = 1;
-
-
-	//WEST	
-	meshes[0].tris[6].vertex[0].x = 0;	meshes[0].tris[6].vertex[0].y = 0;	meshes[0].tris[6].vertex[0].z = 1;
-	meshes[0].tris[6].vertex[1].x = 0;	meshes[0].tris[6].vertex[1].y = 1;	meshes[0].tris[6].vertex[1].z = 1;
-	meshes[0].tris[6].vertex[2].x = 0;	meshes[0].tris[6].vertex[2].y = 1;	meshes[0].tris[6].vertex[2].z = 0;
-		
-	meshes[0].tris[7].vertex[0].x = 0;	meshes[0].tris[7].vertex[0].y = 0;	meshes[0].tris[7].vertex[0].z = 1;
-	meshes[0].tris[7].vertex[1].x = 0;	meshes[0].tris[7].vertex[1].y = 1;	meshes[0].tris[7].vertex[1].z = 0;
-	meshes[0].tris[7].vertex[2].x = 0;	meshes[0].tris[7].vertex[2].y = 0;	meshes[0].tris[7].vertex[2].z = 0;
-
-	
-	//TOP	
-	meshes[0].tris[8].vertex[0].x = 0;	meshes[0].tris[8].vertex[0].y = 1;	meshes[0].tris[8].vertex[0].z = 0;
-	meshes[0].tris[8].vertex[1].x = 0;	meshes[0].tris[8].vertex[1].y = 1;	meshes[0].tris[8].vertex[1].z = 1;
-	meshes[0].tris[8].vertex[2].x = 1;	meshes[0].tris[8].vertex[2].y = 1;	meshes[0].tris[8].vertex[2].z = 1;
-		
-	meshes[0].tris[9].vertex[0].x = 0;	meshes[0].tris[9].vertex[0].y = 1;	meshes[0].tris[9].vertex[0].z = 0;
-	meshes[0].tris[9].vertex[1].x = 1;	meshes[0].tris[9].vertex[1].y = 1;	meshes[0].tris[9].vertex[1].z = 1;
-	meshes[0].tris[9].vertex[2].x = 1;	meshes[0].tris[9].vertex[2].y = 1;	meshes[0].tris[9].vertex[2].z = 0;
-	
-	//BOTTOM	
-	meshes[0].tris[10].vertex[0].x = 1;	meshes[0].tris[10].vertex[0].y = 0;	meshes[0].tris[10].vertex[0].z = 1;
-	meshes[0].tris[10].vertex[1].x = 0;	meshes[0].tris[10].vertex[1].y = 0;	meshes[0].tris[10].vertex[1].z = 1;
-	meshes[0].tris[10].vertex[2].x = 0;	meshes[0].tris[10].vertex[2].y = 0;	meshes[0].tris[10].vertex[2].z = 0;
-		
-	meshes[0].tris[11].vertex[0].x = 1;	meshes[0].tris[11].vertex[0].y = 0;	meshes[0].tris[11].vertex[0].z = 1;
-	meshes[0].tris[11].vertex[1].x = 0;	meshes[0].tris[11].vertex[1].y = 0;	meshes[0].tris[11].vertex[1].z = 0;
-	meshes[0].tris[11].vertex[2].x = 1;	meshes[0].tris[11].vertex[2].y = 0;	meshes[0].tris[11].vertex[2].z = 0;
-	*/
-	
 
 }
 
@@ -404,71 +342,65 @@ void render_meshes(scene_t* scene, mesh_t meshes[])
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 {	
 
-	triangle_t tri_proj, tri_rotZ, tri_rotZX, tri_trans;
-	
-	//Rotate the triangle on Z axys
-	multiply_vector_matrix(&tri_rotZ.vertex[0], &(tri->vertex[0]), &rot_matrix_z);
-	multiply_vector_matrix(&tri_rotZ.vertex[1], &(tri->vertex[1]), &rot_matrix_z);
-	multiply_vector_matrix(&tri_rotZ.vertex[2], &(tri->vertex[2]), &rot_matrix_z);
+	triangle_t tri_proj, tri_trans;
+	mat4x4_t mat_world, mat_trans;
 
-	//Rotate the triangle on X axys	
-	multiply_vector_matrix(&tri_rotZX.vertex[0], &tri_rotZ.vertex[0], &rot_matrix_x);
-	multiply_vector_matrix(&tri_rotZX.vertex[1], &tri_rotZ.vertex[1], &rot_matrix_x);
-	multiply_vector_matrix(&tri_rotZX.vertex[2], &tri_rotZ.vertex[2], &rot_matrix_x);
+	//Create the translation matrix
+	translation_matrix(&mat_trans, 0, 0, 100);
+
+	//Do the chain matrix multiplication to get a rotation and translation matrix
+	mul_matrices(&rot_matrix_z, &rot_matrix_x, &mat_world);
+	mul_matrices(&mat_world, &mat_trans, &mat_world);
 	
-	//Copy the rotated triangle and translate it
-	tri_trans.vertex[0].x = tri_rotZX.vertex[0].x - 0.0;
-	tri_trans.vertex[1].x = tri_rotZX.vertex[1].x - 0.0;
-	tri_trans.vertex[2].x = tri_rotZX.vertex[2].x - 0.0;
-	
-	tri_trans.vertex[0].y = tri_rotZX.vertex[0].y + 0.0;
-	tri_trans.vertex[1].y = tri_rotZX.vertex[1].y + 0.0;
-	tri_trans.vertex[2].y = tri_rotZX.vertex[2].y + 0.0;
-	
-	tri_trans.vertex[0].z = tri_rotZX.vertex[0].z + 80;
-	tri_trans.vertex[1].z = tri_rotZX.vertex[1].z + 80;
-	tri_trans.vertex[2].z = tri_rotZX.vertex[2].z + 80;
+	multiply_vector_matrix(&(tri->vertex[0]), &mat_world, &(tri_trans.vertex[0]));	
+	multiply_vector_matrix(&(tri->vertex[1]), &mat_world, &(tri_trans.vertex[1]));	
+	multiply_vector_matrix(&(tri->vertex[2]), &mat_world, &(tri_trans.vertex[2]));	
 	
 	// ------ Calculate the normal normalized (between 0 and 1) -----
 	vec3d_t normal, line1, line2;
 
-	//Calculate the vector from v0 -> v1
-	line1.x = tri_trans.vertex[1].x - tri_trans.vertex[0].x;
-	line1.y = tri_trans.vertex[1].y - tri_trans.vertex[0].y;
-	line1.z = tri_trans.vertex[1].z - tri_trans.vertex[0].z;
+	
+
+	//Calculate the vector from v0 -> v1	
+	sub_vectors(&tri_trans.vertex[1], &tri_trans.vertex[0], &line1);
 
 	//Calculate the vector from v0 -> v2
-	line2.x = tri_trans.vertex[2].x - tri_trans.vertex[0].x;
-	line2.y = tri_trans.vertex[2].y - tri_trans.vertex[0].y;
-	line2.z = tri_trans.vertex[2].z - tri_trans.vertex[0].z;
-	
-	//Do the cross product of the two vectors to get a perpendicular vector of both (the normal)
-	normal.x = line1.y*line2.z - line2.y*line1.z;	
-	normal.y = line2.x*line1.z - line1.x*line2.z;	
-	normal.z = line1.x*line2.y - line2.x*line1.y;
+	sub_vectors(&tri_trans.vertex[2], &tri_trans.vertex[0], &line2);
 
-	//Normalize the normal vector (
-	float n_lenth = sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
-	normal.x /= n_lenth; normal.y /= n_lenth; normal.z /= n_lenth;
+	//Do the cross product of the two vectors to get a perpendicular vector of both (the normal)	
+	vector_cross_prod (&line1, &line2, &normal);
+
+	//Normalize the normal vector
+	normalise_vector(&normal, &normal);
+
+	//Ray used to calculate if the triangle is visible to the camera
+	vec3d_t cam_ray;
+	sub_vectors(&(tri_trans.vertex[0]), &(scene->camera.pos), &cam_ray);
 
 	//If the dot product of the normal and the camera vector is negative it means the angle between both
 	//is greater than 90º, which means it's visible (check page 5 of notes)
-	if((normal.x*(tri_trans.vertex[0].x - scene->camera.pos.x) + 
-	    normal.y*(tri_trans.vertex[0].y - scene->camera.pos.y) + 
-	    normal.z*(tri_trans.vertex[0].z - scene->camera.pos.z)) < 0.0f)
+	if(vector_dot_prod(&normal, &cam_ray) < 0.0f)
 	{	
 		//If the triangle is visible to the camera, proceed to calculate the projection of it
 		//Do the multiplication of the vector of the vertex with the projection matrix
 		//The result is the projection of the vertex at the screen (values between -1 and 1) from the center
-		multiply_vector_matrix(&tri_proj.vertex[0], &(tri_trans.vertex[0]), &proj_matrix);
-		multiply_vector_matrix(&tri_proj.vertex[1], &(tri_trans.vertex[1]), &proj_matrix);
-		multiply_vector_matrix(&tri_proj.vertex[2], &(tri_trans.vertex[2]), &proj_matrix);
-		
+		multiply_vector_matrix(&(tri_trans.vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
+		multiply_vector_matrix(&(tri_trans.vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
+		multiply_vector_matrix(&(tri_trans.vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
+	
+		//Scale the view (it used to be included in the vector matrix mul, but removed so it has to do this manually)
+		vector_div(&(tri_proj.vertex[0]), tri_proj.vertex[0].w, &(tri_proj.vertex[0]));
+		vector_div(&(tri_proj.vertex[1]), tri_proj.vertex[1].w, &(tri_proj.vertex[1]));
+		vector_div(&(tri_proj.vertex[2]), tri_proj.vertex[2].w, &(tri_proj.vertex[2]));
+
+
 		//Add 1 so the value is not negative and (0,0) is the top left corner and the range is [0,2]
-		tri_proj.vertex[0].x += 1.0f;	tri_proj.vertex[0].y += 1.0f;
-		tri_proj.vertex[1].x += 1.0f;	tri_proj.vertex[1].y += 1.0f;
-		tri_proj.vertex[2].x += 1.0f;	tri_proj.vertex[2].y += 1.0f;
-		
+		vec3d_t v_offset = {1,1,0,0};
+
+		add_vectors(&(tri_proj.vertex[0]), &v_offset, &(tri_proj.vertex[0]));
+		add_vectors(&(tri_proj.vertex[1]), &v_offset, &(tri_proj.vertex[1]));
+		add_vectors(&(tri_proj.vertex[2]), &v_offset, &(tri_proj.vertex[2]));
+
 		//Get half the hight and width of the screen resolution
 		float h_height= scene->window.height/2.0f;
 		float h_width = scene->window.width/2.0f;
@@ -486,7 +418,7 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 		tri_ras->vertex[2].x = tri_proj.vertex[2].x;	tri_ras->vertex[2].y = tri_proj.vertex[2].y;	tri_ras->vertex[2].z = tri_proj.vertex[2].z;
 		
 		//Get the brightness of the triangle
-		tri_ras->brightness = scene->light.x*normal.x + scene->light.y*normal.y + scene->light.z*normal.z;
+		tri_ras->brightness = vector_dot_prod(&(scene->light), &normal);
 		if (tri_ras->brightness < 0) tri_ras->brightness = 0;
 	}
 	else
@@ -647,137 +579,155 @@ void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, scre
 void initialize_matrices(scene_t* scene)
 {
 
-	//PROJECTION MATRIX
+	projection_matrix (&proj_matrix, scene->camera.fov, scene->camera.aspect_ratio, scene->camera.z_far, scene->camera.z_near);
+
+	rotation_matrix_z (&rot_matrix_z, angle*RAD_CONVERT);	
+	rotation_matrix_x (&rot_matrix_x, angle*RAD_CONVERT);
 	
-	proj_matrix.m[0][0] = scene->camera.aspect_ratio * (1.0f/tan((scene->camera.fov)*RAD_CONVERT/2.0f));
-	proj_matrix.m[0][1] = 0;
-	proj_matrix.m[0][2] = 0;
-	proj_matrix.m[0][3] = 0;
-
-	proj_matrix.m[1][0] = 0;
-	proj_matrix.m[1][1] = 1.0f/tan((scene->camera.fov)*RAD_CONVERT/2.0f);
-	proj_matrix.m[1][2] = 0;
-	proj_matrix.m[1][3] = 0;
-
-	proj_matrix.m[2][0] = 0;
-	proj_matrix.m[2][1] = 0;
-	proj_matrix.m[2][2] = (float)(scene->camera.z_far)/(float)((scene->camera.z_far)-(scene->camera.z_near));
-	proj_matrix.m[2][3] = 1;
-
-	proj_matrix.m[3][0] = 0;
-	proj_matrix.m[3][1] = 0;
-	proj_matrix.m[3][2] = -(float)((scene->camera.z_far)*(scene->camera.z_near))/(float)((scene->camera.z_far)-(scene->camera.z_near));
-	proj_matrix.m[3][3] = 0;	
-
-
-	//Z AXYS ROTATION MATRIX
-	
-	rot_matrix_z.m[0][0] = cos(angle*RAD_CONVERT);
-	rot_matrix_z.m[0][1] = sin(angle*RAD_CONVERT);
-	rot_matrix_z.m[0][2] = 0;
-	rot_matrix_z.m[0][3] = 0;
-
-	rot_matrix_z.m[1][0] = -sin(angle*RAD_CONVERT);
-	rot_matrix_z.m[1][1] = cos(angle*RAD_CONVERT);
-	rot_matrix_z.m[1][2] = 0;
-	rot_matrix_z.m[1][3] = 0;
-
-	rot_matrix_z.m[2][0] = 0;
-	rot_matrix_z.m[2][1] = 0;
-	rot_matrix_z.m[2][2] = 1;
-	rot_matrix_z.m[2][3] = 0;
-
-	rot_matrix_z.m[3][0] = 0;
-	rot_matrix_z.m[3][1] = 0;
-	rot_matrix_z.m[3][2] = 0;
-	rot_matrix_z.m[3][3] = 1;
-
-
-	//X AXYS ROTATION MATRIX
-
-	rot_matrix_x.m[0][0] = 1;
-	rot_matrix_x.m[0][1] = 0;
-	rot_matrix_x.m[0][2] = 0;
-	rot_matrix_x.m[0][3] = 0;
-
-	rot_matrix_x.m[1][0] = 0;
-	rot_matrix_x.m[1][1] = cos(angle*RAD_CONVERT);
-	rot_matrix_x.m[1][2] = sin(angle*RAD_CONVERT);
-	rot_matrix_x.m[1][3] = 0;
-
-	rot_matrix_x.m[2][0] = 0;
-	rot_matrix_x.m[2][1] = -sin(angle*RAD_CONVERT);
-	rot_matrix_x.m[2][2] = cos(angle*RAD_CONVERT);
-	rot_matrix_x.m[2][3] = 0;
-
-	rot_matrix_x.m[3][0] = 0;
-	rot_matrix_x.m[3][1] = 0;
-	rot_matrix_x.m[3][2] = 0;
-	rot_matrix_x.m[3][3] = 1;
-
 }
 
 void update_matrices()
-{
-	//Z AXYS ROTATION
-		
-	rot_matrix_z.m[0][0] = cos(angle*RAD_CONVERT);
-	rot_matrix_z.m[0][1] = sin(angle*RAD_CONVERT);
-	rot_matrix_z.m[0][2] = 0;
-	rot_matrix_z.m[0][3] = 0;
-
-	rot_matrix_z.m[1][0] = -sin(angle*RAD_CONVERT);
-	rot_matrix_z.m[1][1] = cos(angle*RAD_CONVERT);
-	rot_matrix_z.m[1][2] = 0;
-	rot_matrix_z.m[1][3] = 0;
-
-	rot_matrix_z.m[2][0] = 0;
-	rot_matrix_z.m[2][1] = 0;
-	rot_matrix_z.m[2][2] = 1;
-	rot_matrix_z.m[2][3] = 0;
-
-	rot_matrix_z.m[3][0] = 0;
-	rot_matrix_z.m[3][1] = 0;
-	rot_matrix_z.m[3][2] = 0;
-	rot_matrix_z.m[3][3] = 1;
-
-
-	//X AXYS ROTATION MATRIX
-
-	rot_matrix_x.m[0][0] = 1;
-	rot_matrix_x.m[0][1] = 0;
-	rot_matrix_x.m[0][2] = 0;
-	rot_matrix_x.m[0][3] = 0;
-
-	rot_matrix_x.m[1][0] = 0;
-	rot_matrix_x.m[1][1] = cos(angle*RAD_CONVERT*0.5);
-	rot_matrix_x.m[1][2] = sin(angle*RAD_CONVERT*0.5);
-	rot_matrix_x.m[1][3] = 0;
-
-	rot_matrix_x.m[2][0] = 0;
-	rot_matrix_x.m[2][1] = -sin(angle*RAD_CONVERT*0.5);
-	rot_matrix_x.m[2][2] = cos(angle*RAD_CONVERT*0.5);
-	rot_matrix_x.m[2][3] = 0;
-
-	rot_matrix_x.m[3][0] = 0;
-	rot_matrix_x.m[3][1] = 0;
-	rot_matrix_x.m[3][2] = 0;
-	rot_matrix_x.m[3][3] = 1;
+{	
+	rotation_matrix_z (&rot_matrix_z, angle*RAD_CONVERT/2);	
+	rotation_matrix_x (&rot_matrix_x, angle*RAD_CONVERT/2);		
 }
 
-
-void multiply_vector_matrix(vec3d_t* out, vec3d_t* in, mat4x4_t* mat)
+void init_matrix (mat4x4_t* matrix)
 {
-	out->x = in->x * mat->m[0][0] + in->y * mat->m[1][0] + in->z * mat->m[2][0] + mat->m[3][0];
-	out->y = in->x * mat->m[0][1] + in->y * mat->m[1][1] + in->z * mat->m[2][1] + mat->m[3][1];
-	out->z = in->x * mat->m[0][2] + in->y * mat->m[1][2] + in->z * mat->m[2][2] + mat->m[3][2];
-	float w = in->x * mat->m[0][3] + in->y * mat->m[1][3] + in->z * mat->m[2][3] + mat->m[3][3];
-	if(w != 0.0f)
+	for (int i = 0; i < 4; i++)
 	{
-		out->x /= w;
-		out->y /= w;
-		out->z /= w;
-	}	
+		for (int j = 0; j < 4; j++)
+		{
+			matrix->m[i][j] = 0;
+		}
+	}
+}
+
+void identity_matrix (mat4x4_t* matrix)
+{
+	init_matrix (matrix);
+	matrix->m[0][0] = 1.0f;
+	matrix->m[1][1] = 1.0f;
+	matrix->m[2][2] = 1.0f;
+	matrix->m[3][3] = 1.0f;
+}
+
+void rotation_matrix_x (mat4x4_t* matrix, float angle_rad)
+{
+	
+	matrix->m[0][0] = 1;
+	matrix->m[0][1] = 0;
+	matrix->m[0][2] = 0;
+	matrix->m[0][3] = 0;
+
+	matrix->m[1][0] = 0;
+	matrix->m[1][1] = cos(angle_rad);
+	matrix->m[1][2] = sin(angle_rad);
+	matrix->m[1][3] = 0;
+
+	matrix->m[2][0] = 0;
+	matrix->m[2][1] = -sin(angle_rad);
+	matrix->m[2][2] = cos(angle_rad);
+	matrix->m[2][3] = 0;
+
+	matrix->m[3][0] = 0;
+	matrix->m[3][1] = 0;
+	matrix->m[3][2] = 0;
+	matrix->m[3][3] = 1;
+}
+
+void rotation_matrix_y (mat4x4_t* matrix, float angle_rad)
+{
+	
+	matrix->m[0][0] = cos(angle_rad);
+	matrix->m[0][1] = 0;
+	matrix->m[0][2] = sin(angle_rad);
+	matrix->m[0][3] = 0;
+
+	matrix->m[1][0] = 0;
+	matrix->m[1][1] = 1;
+	matrix->m[1][2] = 0;
+	matrix->m[1][3] = 0;
+
+	matrix->m[2][0] = -sin(angle_rad);
+	matrix->m[2][1] = 0;
+	matrix->m[2][2] = cos(angle_rad);
+	matrix->m[2][3] = 0;
+
+	matrix->m[3][0] = 0;
+	matrix->m[3][1] = 0;
+	matrix->m[3][2] = 0;
+	matrix->m[3][3] = 1;
+}
+
+void rotation_matrix_z (mat4x4_t* matrix, float angle_rad)
+{
+	
+	matrix->m[0][0] = cos(angle_rad);
+	matrix->m[0][1] = sin(angle_rad);
+	matrix->m[0][2] = 0;
+	matrix->m[0][3] = 0;
+
+	matrix->m[1][0] = -sin(angle_rad);
+	matrix->m[1][1] = cos(angle_rad);
+	matrix->m[1][2] = 0;
+	matrix->m[1][3] = 0;
+
+	matrix->m[2][0] = 0;
+	matrix->m[2][1] = 0;
+	matrix->m[2][2] = 1;
+	matrix->m[2][3] = 0;
+
+	matrix->m[3][0] = 0;
+	matrix->m[3][1] = 0;
+	matrix->m[3][2] = 0;
+	matrix->m[3][3] = 1;
+}
+
+void translation_matrix (mat4x4_t* matrix, float x, float y, float z)
+{
+	init_matrix(matrix);
+	matrix->m[0][0] = 1;
+	matrix->m[1][1] = 1;
+	matrix->m[2][2] = 1;
+	matrix->m[3][0] = x;
+	matrix->m[3][1] = y;
+	matrix->m[3][2] = z;
+	matrix->m[3][3] = 1;
+}
+
+void projection_matrix (mat4x4_t* matrix, float fov, float aspect_r, float z_far, float z_near)
+{
+	
+	matrix->m[0][0] = aspect_r * (1.0f/tan(fov*RAD_CONVERT/2.0f));
+	matrix->m[0][1] = 0;
+	matrix->m[0][2] = 0;
+	matrix->m[0][3] = 0;
+
+	matrix->m[1][0] = 0;
+	matrix->m[1][1] = 1.0f/tan(fov*RAD_CONVERT/2.0f);
+	matrix->m[1][2] = 0;
+	matrix->m[1][3] = 0;
+
+	matrix->m[2][0] = 0;
+	matrix->m[2][1] = 0;
+	matrix->m[2][2] = z_far/(z_far-z_near);
+	matrix->m[2][3] = 1;
+
+	matrix->m[3][0] = 0;
+	matrix->m[3][1] = 0;
+	matrix->m[3][2] = ((-z_far) * z_near) / (z_far - z_near);
+	matrix->m[3][3] = 0;	
+
+
+}
+
+void multiply_vector_matrix(vec3d_t* in, mat4x4_t* mat, vec3d_t* out)
+{
+	out->x = in->x * mat->m[0][0] + in->y * mat->m[1][0] + in->z * mat->m[2][0] + in->w * mat->m[3][0];
+	out->y = in->x * mat->m[0][1] + in->y * mat->m[1][1] + in->z * mat->m[2][1] + in->w * mat->m[3][1];
+	out->z = in->x * mat->m[0][2] + in->y * mat->m[1][2] + in->z * mat->m[2][2] + in->w * mat->m[3][2];
+	out->w = in->x * mat->m[0][3] + in->y * mat->m[1][3] + in->z * mat->m[2][3] + in->w * mat->m[3][3];
 }
 
 void add_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
@@ -825,11 +775,37 @@ void normalise_vector(vec3d_t* v, vec3d_t* vn)
 	vector_div(v, l, vn);
 }
 
-void vector_cross_product(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
+void vector_cross_prod(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
 {
 	vr->x = v1->y*v2->z - v1->z*v2->y;
 	vr->y = v1->z*v2->x - v1->x*v2->z;
 	vr->z = v1->x*v2->y - v1->y*v2->x;	
+}
+
+void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr)
+{
+	mat4x4_t mc;
+	for (int i=0; i < 4; i++)
+	{
+		for (int j=0; j < 4; j++)
+		{
+			mc.m[i][j] = m1->m[i][0] * m2->m[0][j] +
+				      m1->m[i][1] * m2->m[1][j] +
+				      m1->m[i][2] * m2->m[2][j] +
+				      m1->m[i][3] * m2->m[3][j]; 
+		}
+	}
+
+
+	for (int i=0; i < 4; i++)
+	{
+		for (int j=0; j < 4; j++)
+		{
+			mr->m[i][j] = mc.m[i][j]; 
+		}
+	}
+
+	
 }
 
 
