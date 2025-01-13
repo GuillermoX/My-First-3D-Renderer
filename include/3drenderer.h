@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 //------- 3D MATH DEFINES -------------------------
-#define MAX_TRI_MESH 3000
+#define MAX_TRI_MESH 7000
 #define RAD_CONVERT 2*M_PI/360
 
 //------- GPSCENECREATOR DEFINES ------------------
@@ -33,7 +33,7 @@ typedef struct
 
 typedef struct
 {
-	float x, y, z;
+	float x, y, z, w;
 } vec3d_t;
 
 typedef struct
@@ -114,10 +114,31 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras);
 void raster_triangle(scene_t* scene, triangle_t* tri);
 void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, rgb_t color);
 
-//Matrix functions
+//-------- VECTOR AND MATRIX FUNCTIONS ------------------------------------
+
+//Initialize matrices
 void initialize_matrices(scene_t* scene);
+void init_matrix (mat4x4_t* matrix);
+void identity_matrix (mat4x4_t* matrix);
+void rotation_matrix_x (mat4x4_t* matrix, float angle_rad);
+void rotation_matrix_y (mat4x4_t* matrix, float angle_rad);
+void rotation_matrix_z (mat4x4_t* matrix, float angle_rad);
+void translation_matrix (mat4x4_t* matrix, float x, float y, float z);
+void projection_matrix (mat4x4_t* matrix, float fov, float aspect_r, float z_far, float z_near);
+
 void update_matrices();
-void multiply_vector_matrix(vec3d_t* out, vec3d_t* in, mat4x4_t* mat);
+
+//Vector & Matrix operations
+void multiply_vector_matrix(vec3d_t* in, mat4x4_t* mat, vec3d_t* out);
+void add_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr);
+void sub_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr);
+void vector_mul(vec3d_t* v, float k, vec3d_t* vr);
+void vector_div(vec3d_t* v, float k, vec3d_t* vr);
+float vector_dot_prod(vec3d_t* v1, vec3d_t* v2);
+float vector_length(vec3d_t* v);
+void normalise_vector(vec3d_t* v, vec3d_t* vn);
+void vector_cross_prod(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr);
+void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr);
 
 
 
