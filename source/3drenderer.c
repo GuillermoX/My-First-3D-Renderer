@@ -218,8 +218,8 @@ void update_scene(scene_t* scene)
 	//Stop running if scape is pressed
 	if(gp_keys[KEY_esc]) scene->running = false;
 
-	if(gp_keys[KEY_a]) move_camera(scene, 1, 0, 0);
-	if(gp_keys[KEY_d]) move_camera(scene, -1, 0, 0);
+	if(gp_keys[KEY_a]) move_camera(scene, -1, 0, 0);
+	if(gp_keys[KEY_d]) move_camera(scene, 1, 0, 0);
 	if(gp_keys[KEY_w]) move_camera(scene, 0, 0, 1);
 	if(gp_keys[KEY_s]) move_camera(scene, 0, 0, -1);
 	if(gp_keys[KEY_space]) move_camera(scene, 0, 1, 0);
@@ -243,7 +243,7 @@ void move_camera(scene_t* scene, float x, float y, float z)
 void rotate_camera(scene_t* scene, int dir)
 {
 	mat4x4_t rot_y;
-	rotation_matrix_y(&rot_y, dir*10*delta_time*RAD_CONVERT);
+	rotation_matrix_y(&rot_y, dir*30*delta_time*RAD_CONVERT);
 
 	multiply_vector_matrix(&(scene->camera.look_dir), &rot_y, &(scene->camera.look_dir));
 }
@@ -288,7 +288,7 @@ void initialize_meshes(mesh_t meshes[])
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
-		vec3d_t verts[4000];
+		vec3d_t verts[200];
 
 		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
@@ -400,7 +400,7 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	mat4x4_t mat_world, mat_trans;
 
 	//Create the translation matrix
-	translation_matrix(&mat_trans, 0, 0, 100);
+	translation_matrix(&mat_trans, 0, 0, 10);
 
 	//Do the chain matrix multiplication to get a rotation and translation matrix
 	mul_matrices(&rot_matrix_z, &rot_matrix_x, &mat_world);
@@ -772,11 +772,12 @@ void rotation_direction_matrix_inv(mat4x4_t* matrix, vec3d_t* pos, vec3d_t* targ
 
 	//Get the up vector
 	vec3d_t b;
-	vector_mul(&forward_cam, vector_dot_prod(&forward_cam, up), &b);
+	vector_mul(&forward_cam, vector_dot_prod(up, &forward_cam), &b);
 	sub_vectors(up, &b, &up_cam);
+	normalise_vector(&up_cam, &up_cam);
 
 	//Get the right vector
-	vector_cross_prod(&forward_cam, &up_cam, &right_cam);
+	vector_cross_prod(&up_cam, &forward_cam, &right_cam);
 
 
 
@@ -796,9 +797,9 @@ void rotation_direction_matrix_inv(mat4x4_t* matrix, vec3d_t* pos, vec3d_t* targ
 	matrix->m[2][2] = forward_cam.z;		
 
 	//Fourth row
-	matrix->m[3][0] = -vector_dot_prod(pos, &right_cam);		
-	matrix->m[3][1] = -vector_dot_prod(pos, &up_cam);		
-	matrix->m[3][2] = -vector_dot_prod(pos, &forward_cam);		
+	matrix->m[3][0] = -(vector_dot_prod(pos, &right_cam));		
+	matrix->m[3][1] = -(vector_dot_prod(pos, &up_cam));		
+	matrix->m[3][2] = -(vector_dot_prod(pos, &forward_cam));		
 	matrix->m[3][3] = 1;
 	
 
