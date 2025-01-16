@@ -11,5 +11,5 @@ $(MAIN): ./source/*.c ./include/*.h
 run:
 	./$(MAIN)
 
-delete:
+clean:
 	rm ./$(MAIN)

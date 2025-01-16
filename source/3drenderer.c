@@ -28,7 +28,7 @@ float angle;	//Temporary angle to rotate the meshes
 //Projection matrix
 mat4x4_t proj_matrix;
 //Y-axys rotation matrix
-mat4x4_t rot_matrix_z, rot_matrix_x;
+mat4x4_t rot_matrix_z, rot_matrix_x, rot_cam_matrix;
 
 //------ START & STOP SCENE FUNCTIONS ------------------------------------------
 
@@ -45,6 +45,9 @@ void start_scene(scene_t* scene)
 
 	//Start the camera properties
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
+	scene -> camera.look_dir.x = 0;	scene->camera.look_dir.y = 0;	scene->camera.look_dir.z = 1;
+	scene->camera.rot_y_angle = 0;
+
 	scene->camera.z_near = 0.1f;
 	scene->camera.z_far = 1000.0f;
 	scene->camera.fov = 90.0f;
@@ -153,6 +156,18 @@ void process_input(scene_t* scene)
 				case SDLK_d:
 					gp_keys[KEY_d] = true;
 					break;
+				case SDLK_SPACE:
+					gp_keys[KEY_space] = true;
+					break;
+				case SDLK_LSHIFT:
+					gp_keys[KEY_lshift] = true;
+					break;
+				case SDLK_LEFT:
+					gp_keys[KEY_left] = true;
+					break;
+				case SDLK_RIGHT:
+					gp_keys[KEY_right] = true;
+					break;
 			}
 			break;
 		case SDL_KEYUP:
@@ -164,12 +179,25 @@ void process_input(scene_t* scene)
 				case SDLK_s:
 					gp_keys[KEY_s] = false;
 					break;
-				case SDLK_d:
+				case SDLK_a:
 					gp_keys[KEY_a] = false;
 					break;
-				case SDLK_a:
+				case SDLK_d:
 					gp_keys[KEY_d] = false;
 					break;
+				case SDLK_SPACE:
+					gp_keys[KEY_space] = false;
+					break;
+				case SDLK_LSHIFT:
+					gp_keys[KEY_lshift] = false;
+					break;
+				case SDLK_LEFT:
+					gp_keys[KEY_left] = false;
+					break;
+				case SDLK_RIGHT:
+					gp_keys[KEY_right] = false;
+					break;
+				
 			}
 			break;	
 
@@ -190,10 +218,34 @@ void update_scene(scene_t* scene)
 	//Stop running if scape is pressed
 	if(gp_keys[KEY_esc]) scene->running = false;
 
+	if(gp_keys[KEY_a]) move_camera(scene, 1, 0, 0);
+	if(gp_keys[KEY_d]) move_camera(scene, -1, 0, 0);
+	if(gp_keys[KEY_w]) move_camera(scene, 0, 0, 1);
+	if(gp_keys[KEY_s]) move_camera(scene, 0, 0, -1);
+	if(gp_keys[KEY_space]) move_camera(scene, 0, 1, 0);
+	if(gp_keys[KEY_lshift]) move_camera(scene, 0, -1, 0);
+	if(gp_keys[KEY_left]) rotate_camera(scene, -1);
+	if(gp_keys[KEY_right]) rotate_camera(scene, 1);
 	//Increase the rotation angle
-	angle += 80*delta_time;
-	update_matrices();
+	//angle += 80*delta_time;
+	update_matrices(scene);
 
+
+}
+
+void move_camera(scene_t* scene, float x, float y, float z)
+{
+	scene->camera.pos.x += x*10*delta_time;
+	scene->camera.pos.y += y*10*delta_time;
+	scene->camera.pos.z += z*10*delta_time;
+}
+
+void rotate_camera(scene_t* scene, int dir)
+{
+	mat4x4_t rot_y;
+	rotation_matrix_y(&rot_y, dir*10*delta_time*RAD_CONVERT);
+
+	multiply_vector_matrix(&(scene->camera.look_dir), &rot_y, &(scene->camera.look_dir));
 }
 
 
@@ -219,6 +271,8 @@ void render_scene(scene_t* scene)
 	//Show the final render result
 	SDL_RenderPresent(gp_renderer);
 }
+
+
 
 
 
@@ -342,7 +396,7 @@ void render_meshes(scene_t* scene, mesh_t meshes[])
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 {	
 
-	triangle_t tri_proj, tri_trans;
+	triangle_t tri_proj, tri_trans, tri_rotated;
 	mat4x4_t mat_world, mat_trans;
 
 	//Create the translation matrix
@@ -354,7 +408,13 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	
 	multiply_vector_matrix(&(tri->vertex[0]), &mat_world, &(tri_trans.vertex[0]));	
 	multiply_vector_matrix(&(tri->vertex[1]), &mat_world, &(tri_trans.vertex[1]));	
-	multiply_vector_matrix(&(tri->vertex[2]), &mat_world, &(tri_trans.vertex[2]));	
+	multiply_vector_matrix(&(tri->vertex[2]), &mat_world, &(tri_trans.vertex[2]));
+
+	multiply_vector_matrix(&(tri_trans.vertex[0]), &rot_cam_matrix, &(tri_rotated.vertex[0]));	
+	multiply_vector_matrix(&(tri_trans.vertex[1]), &rot_cam_matrix, &(tri_rotated.vertex[1]));	
+	multiply_vector_matrix(&(tri_trans.vertex[2]), &rot_cam_matrix, &(tri_rotated.vertex[2]));
+	
+
 	
 	// ------ Calculate the normal normalized (between 0 and 1) -----
 	vec3d_t normal, line1, line2;
@@ -384,9 +444,9 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 		//If the triangle is visible to the camera, proceed to calculate the projection of it
 		//Do the multiplication of the vector of the vertex with the projection matrix
 		//The result is the projection of the vertex at the screen (values between -1 and 1) from the center
-		multiply_vector_matrix(&(tri_trans.vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
-		multiply_vector_matrix(&(tri_trans.vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
-		multiply_vector_matrix(&(tri_trans.vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
+		multiply_vector_matrix(&(tri_rotated.vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
+		multiply_vector_matrix(&(tri_rotated.vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
+		multiply_vector_matrix(&(tri_rotated.vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
 	
 		//Scale the view (it used to be included in the vector matrix mul, but removed so it has to do this manually)
 		vector_div(&(tri_proj.vertex[0]), tri_proj.vertex[0].w, &(tri_proj.vertex[0]));
@@ -586,10 +646,16 @@ void initialize_matrices(scene_t* scene)
 	
 }
 
-void update_matrices()
+void update_matrices(scene_t* scene)
 {	
 	rotation_matrix_z (&rot_matrix_z, angle*RAD_CONVERT/2);	
-	rotation_matrix_x (&rot_matrix_x, angle*RAD_CONVERT/2);		
+	rotation_matrix_x (&rot_matrix_x, angle*RAD_CONVERT/2);	
+
+	vec3d_t target;
+	add_vectors(&(scene->camera.pos), &(scene->camera.look_dir), &target);
+	vec3d_t up;
+	up.x = 0;	up.y = 1;	up.z = 0;	up.w = 1;
+	rotation_direction_matrix_inv(&rot_cam_matrix, &(scene->camera.pos), &target, &up);
 }
 
 void init_matrix (mat4x4_t* matrix)
@@ -694,6 +760,48 @@ void translation_matrix (mat4x4_t* matrix, float x, float y, float z)
 	matrix->m[3][1] = y;
 	matrix->m[3][2] = z;
 	matrix->m[3][3] = 1;
+}
+
+void rotation_direction_matrix_inv(mat4x4_t* matrix, vec3d_t* pos, vec3d_t* target, vec3d_t* up)
+{
+	vec3d_t forward_cam, right_cam, up_cam;
+
+	//Get the foward vector
+	sub_vectors(target, pos, &forward_cam);
+	normalise_vector(&forward_cam, &forward_cam);
+
+	//Get the up vector
+	vec3d_t b;
+	vector_mul(&forward_cam, vector_dot_prod(&forward_cam, up), &b);
+	sub_vectors(up, &b, &up_cam);
+
+	//Get the right vector
+	vector_cross_prod(&forward_cam, &up_cam, &right_cam);
+
+
+
+	//First row
+	matrix->m[0][0] = right_cam.x;		
+	matrix->m[0][1] = up_cam.x;		
+	matrix->m[0][2] = forward_cam.x;		
+
+	//Second row		
+	matrix->m[1][0] = right_cam.y;		
+	matrix->m[1][1] = up_cam.y;		
+	matrix->m[1][2] = forward_cam.y;		
+
+	//Third row
+	matrix->m[2][0] = right_cam.z;		
+	matrix->m[2][1] = up_cam.z;		
+	matrix->m[2][2] = forward_cam.z;		
+
+	//Fourth row
+	matrix->m[3][0] = -vector_dot_prod(pos, &right_cam);		
+	matrix->m[3][1] = -vector_dot_prod(pos, &up_cam);		
+	matrix->m[3][2] = -vector_dot_prod(pos, &forward_cam);		
+	matrix->m[3][3] = 1;
+	
+
 }
 
 void projection_matrix (mat4x4_t* matrix, float fov, float aspect_r, float z_far, float z_near)

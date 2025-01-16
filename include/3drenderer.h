@@ -11,7 +11,7 @@
 
 //------- GPSCENECREATOR DEFINES ------------------
 //Number of keys used from keyboard
-#define NUM_OF_KEYS 5
+#define NUM_OF_KEYS 9
 
 
 
@@ -66,7 +66,11 @@ typedef enum
 	KEY_w,
 	KEY_s,
 	KEY_a,
-	KEY_d
+	KEY_d,
+	KEY_space,
+	KEY_lshift,
+	KEY_left,
+	KEY_right
 } keys_enum;
 
 
@@ -79,6 +83,8 @@ typedef struct
 typedef struct
 {
 	vec3d_t pos;
+	vec3d_t look_dir;
+	float rot_y_angle;
 	float z_near;
 	float z_far;
 	float fov;
@@ -102,6 +108,8 @@ bool create_window(scene_t* scene, char window_name[]);
 void start_scene(scene_t* scene);
 void process_input(scene_t* scene);
 void update_scene(scene_t* scene);
+void move_camera(scene_t* scene, float x, float y, float z);
+void rotate_camera(scene_t* scene, int dir);
 void render_scene(scene_t* scene);
 void stop_scene();
 
@@ -124,9 +132,10 @@ void rotation_matrix_x (mat4x4_t* matrix, float angle_rad);
 void rotation_matrix_y (mat4x4_t* matrix, float angle_rad);
 void rotation_matrix_z (mat4x4_t* matrix, float angle_rad);
 void translation_matrix (mat4x4_t* matrix, float x, float y, float z);
+void rotation_direction_matrix_inv(mat4x4_t* matrix, vec3d_t* pos, vec3d_t* target, vec3d_t* up);
 void projection_matrix (mat4x4_t* matrix, float fov, float aspect_r, float z_far, float z_near);
 
-void update_matrices();
+void update_matrices(scene_t* scene);
 
 //Vector & Matrix operations
 void multiply_vector_matrix(vec3d_t* in, mat4x4_t* mat, vec3d_t* out);
