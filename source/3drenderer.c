@@ -7,6 +7,10 @@
 #define FPS 40
 #define FRAME_TARGET_TIME 1000/FPS
 
+#define MOVE_VEL 8
+#define ROTATE_VEL 50
+#define UP_DOWN_VEL 8
+
 //FPS Control variables
 float delta_time;
 int last_frame_time;
@@ -47,6 +51,7 @@ void start_scene(scene_t* scene)
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
 	scene -> camera.look_dir.x = 0;	scene->camera.look_dir.y = 0;	scene->camera.look_dir.z = 1;
 	scene->camera.rot_y_angle = 0;
+	scene->camera.rot_x_angle = 0;
 
 	scene->camera.z_near = 0.1f;
 	scene->camera.z_far = 1000.0f;
@@ -54,8 +59,8 @@ void start_scene(scene_t* scene)
 	scene->camera.aspect_ratio = (float)scene->window.height / (float)scene->window.width;
 
 	//Start the simple illumination
-	scene->light.x = 0;
-	scene->light.y = 0;
+	scene->light.x = -1;
+	scene->light.y = 1;
 	scene->light.z = -1;	
 	//Normalize ilumination vector
 	float l_lenth = sqrt(scene->light.x*scene->light.x + scene->light.y*scene->light.y + scene->light.z*scene->light.z);
@@ -167,6 +172,12 @@ void process_input(scene_t* scene)
 					break;
 				case SDLK_RIGHT:
 					gp_keys[KEY_right] = true;
+					break;	
+				case SDLK_UP:
+					gp_keys[KEY_up] = true;
+					break;
+				case SDLK_DOWN:
+					gp_keys[KEY_down] = true;
 					break;
 			}
 			break;
@@ -197,6 +208,13 @@ void process_input(scene_t* scene)
 				case SDLK_RIGHT:
 					gp_keys[KEY_right] = false;
 					break;
+				case SDLK_UP:
+					gp_keys[KEY_up] = false;
+					break;
+				case SDLK_DOWN:
+					gp_keys[KEY_down] = false;
+					break;
+				
 				
 			}
 			break;	
@@ -218,34 +236,76 @@ void update_scene(scene_t* scene)
 	//Stop running if scape is pressed
 	if(gp_keys[KEY_esc]) scene->running = false;
 
-	if(gp_keys[KEY_a]) move_camera(scene, -1, 0, 0);
-	if(gp_keys[KEY_d]) move_camera(scene, 1, 0, 0);
-	if(gp_keys[KEY_w]) move_camera(scene, 0, 0, 1);
-	if(gp_keys[KEY_s]) move_camera(scene, 0, 0, -1);
+	if(gp_keys[KEY_a]) move_camera(scene, 0, 0, -1);
+	if(gp_keys[KEY_d]) move_camera(scene, 0, 0, 1);
+	if(gp_keys[KEY_w]) move_camera(scene, 1, 0, 0);
+	if(gp_keys[KEY_s]) move_camera(scene, -1, 0, 0);
 	if(gp_keys[KEY_space]) move_camera(scene, 0, 1, 0);
 	if(gp_keys[KEY_lshift]) move_camera(scene, 0, -1, 0);
-	if(gp_keys[KEY_left]) rotate_camera(scene, -1);
-	if(gp_keys[KEY_right]) rotate_camera(scene, 1);
+	if(gp_keys[KEY_left]) rotate_camera(scene, 0, 1);
+	if(gp_keys[KEY_right]) rotate_camera(scene, 0, -1);
+	if(gp_keys[KEY_up]) rotate_camera(scene, -1, 0);
+	if(gp_keys[KEY_down]) rotate_camera(scene, 1, 0);
 	//Increase the rotation angle
 	//angle += 80*delta_time;
+
+	update_camera_look_dir(scene);
 	update_matrices(scene);
 
+	printf("\nAngle: %f", scene->camera.rot_y_angle);
+
 
 }
 
-void move_camera(scene_t* scene, float x, float y, float z)
+void move_camera(scene_t* scene, float forward, float up, float right)
 {
-	scene->camera.pos.x += x*10*delta_time;
-	scene->camera.pos.y += y*10*delta_time;
-	scene->camera.pos.z += z*10*delta_time;
+	vec3d_t vec_forward, vec_right = {.x = 0, .y = 0, .z = 0};
+
+	if(up != 0) scene->camera.pos.y += up*MOVE_VEL*delta_time;
+	if(forward != 0)
+	{
+		vector_mul(&(scene->camera.look_dir), forward*MOVE_VEL*delta_time, &vec_forward);
+		add_vectors(&(scene->camera.pos), &vec_forward, &(scene->camera.pos));
+	}
+	if(right != 0)
+	{
+		vector_cross_prod(&((vec3d_t) {0, 1, 0}), &(scene->camera.look_dir), &(vec_right));
+		normalise_vector(&vec_right, &vec_right);
+		vector_mul(&vec_right, right*MOVE_VEL*delta_time, &vec_right);
+		add_vectors(&(scene->camera.pos), &vec_right, &(scene->camera.pos));
+	}
+	
 }
 
-void rotate_camera(scene_t* scene, int dir)
+void rotate_camera(scene_t* scene, int dir_x, int dir_y)
 {
-	mat4x4_t rot_y;
-	rotation_matrix_y(&rot_y, dir*30*delta_time*RAD_CONVERT);
+	/*mat4x4_t rot;
+	rotation_matrix_x(&rot, dir_x*ROTATE_VEL*delta_time*RAD_CONVERT);
+	multiply_vector_matrix(&(scene->camera.look_dir), &rot, &(scene->camera.look_dir));
 
-	multiply_vector_matrix(&(scene->camera.look_dir), &rot_y, &(scene->camera.look_dir));
+	rotation_matrix_y(&rot, dir_y*ROTATE_VEL*delta_time*RAD_CONVERT);
+	multiply_vector_matrix(&(scene->camera.look_dir), &rot, &(scene->camera.look_dir));*/
+	scene->camera.rot_x_angle += dir_x*ROTATE_VEL*delta_time;
+	if(scene->camera.rot_x_angle >= 360 || scene->camera.rot_x_angle <= -360){
+		scene->camera.rot_x_angle = 0 + dir_x*ROTATE_VEL*delta_time;
+	}
+
+	scene->camera.rot_y_angle += dir_y*ROTATE_VEL*delta_time;
+	if(scene->camera.rot_y_angle >= 360 || scene->camera.rot_y_angle <= -360){
+		scene->camera.rot_y_angle = 0 + dir_x*ROTATE_VEL*delta_time;
+	}
+
+
+}
+
+void update_camera_look_dir(scene_t* scene)
+{
+	mat4x4_t rot;
+	rotation_matrix_x(&rot, scene->camera.rot_x_angle*RAD_CONVERT);
+	multiply_vector_matrix(&((vec3d_t){0,0,1,1}), &rot, &(scene->camera.look_dir));
+
+	rotation_matrix_y(&rot, scene->camera.rot_y_angle*RAD_CONVERT);
+	multiply_vector_matrix(&(scene->camera.look_dir), &rot, &(scene->camera.look_dir));
 }
 
 
@@ -288,7 +348,7 @@ void initialize_meshes(mesh_t meshes[])
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
-		vec3d_t verts[200];
+		vec3d_t verts[3000];
 
 		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
@@ -373,27 +433,31 @@ void render_meshes(scene_t* scene, mesh_t meshes[])
 		//Number of triangles in the mesh	
 		n_tris = meshes[i].n_tris;
 
-		//Tuple of triangles processed to raster used to sort them by depth	
-		triangle_t tris[n_tris];
+		//Queue of triangles to raster
+		triangle_queue_t tri_q;
+		triangle_t array_raster_q[n_tris*3];
+		ini_triangle_queue(&tri_q, array_raster_q, n_tris*3);
 
 		for(int j=0; j < n_tris; j++)
 		{	
-			//Rotate, move, project and add the triangle to the raster tuple
-			process_triangle(scene, &(meshes[i].tris[j]), &tris[j]);	
+			//Rotate, move, project and add the triangle to the raster queue
+			process_triangle(scene, &(meshes[i].tris[j]), &tri_q);	
 		}
 
 		//Sort the triangles ready to raster depending on the depth they are
-		qsort(tris, n_tris, sizeof(triangle_t), compare_depth_tris);
+		qsort(tri_q.q, tri_q.n_tris, sizeof(triangle_t), compare_depth_tris);
 
-		for (int j=0; j < n_tris; j++)
+		while(tri_q.n_tris > 0)
 		{
-			raster_triangle(scene, &tris[j]);
+			triangle_t tri_ras;
+			next_triangle(&tri_q, &tri_ras);
+			raster_triangle(scene, &tri_ras);
 		}
 
 	}
 }
 
-void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
+void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q)
 {	
 
 	triangle_t tri_proj, tri_trans, tri_rotated;
@@ -410,9 +474,6 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	multiply_vector_matrix(&(tri->vertex[1]), &mat_world, &(tri_trans.vertex[1]));	
 	multiply_vector_matrix(&(tri->vertex[2]), &mat_world, &(tri_trans.vertex[2]));
 
-	multiply_vector_matrix(&(tri_trans.vertex[0]), &rot_cam_matrix, &(tri_rotated.vertex[0]));	
-	multiply_vector_matrix(&(tri_trans.vertex[1]), &rot_cam_matrix, &(tri_rotated.vertex[1]));	
-	multiply_vector_matrix(&(tri_trans.vertex[2]), &rot_cam_matrix, &(tri_rotated.vertex[2]));
 	
 
 	
@@ -441,64 +502,81 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras)
 	//is greater than 90º, which means it's visible (check page 5 of notes)
 	if(vector_dot_prod(&normal, &cam_ray) < 0.0f)
 	{	
-		//If the triangle is visible to the camera, proceed to calculate the projection of it
-		//Do the multiplication of the vector of the vertex with the projection matrix
-		//The result is the projection of the vertex at the screen (values between -1 and 1) from the center
-		multiply_vector_matrix(&(tri_rotated.vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
-		multiply_vector_matrix(&(tri_rotated.vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
-		multiply_vector_matrix(&(tri_rotated.vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
-	
-		//Scale the view (it used to be included in the vector matrix mul, but removed so it has to do this manually)
-		vector_div(&(tri_proj.vertex[0]), tri_proj.vertex[0].w, &(tri_proj.vertex[0]));
-		vector_div(&(tri_proj.vertex[1]), tri_proj.vertex[1].w, &(tri_proj.vertex[1]));
-		vector_div(&(tri_proj.vertex[2]), tri_proj.vertex[2].w, &(tri_proj.vertex[2]));
+
+		//Rotate the triangle to the camera view space
+		multiply_vector_matrix(&(tri_trans.vertex[0]), &rot_cam_matrix, &(tri_rotated.vertex[0]));	
+		multiply_vector_matrix(&(tri_trans.vertex[1]), &rot_cam_matrix, &(tri_rotated.vertex[1]));	
+		multiply_vector_matrix(&(tri_trans.vertex[2]), &rot_cam_matrix, &(tri_rotated.vertex[2]));
+
+		triangle_t tris_clip[2];	int n_tris_clip = 0;
+		vec3d_t plane_p = {.x = 0, .y = 0, .z = scene->camera.z_near+3};
+		vec3d_t plane_n = {.x = 0, .y = 0, .z = 1};
 
 
-		//Add 1 so the value is not negative and (0,0) is the top left corner and the range is [0,2]
-		vec3d_t v_offset = {1,1,0,0};
+		n_tris_clip = triangle_clip_against_plane(&plane_p, &plane_n, &tri_rotated, &tris_clip[0], &tris_clip[1]);
 
-		add_vectors(&(tri_proj.vertex[0]), &v_offset, &(tri_proj.vertex[0]));
-		add_vectors(&(tri_proj.vertex[1]), &v_offset, &(tri_proj.vertex[1]));
-		add_vectors(&(tri_proj.vertex[2]), &v_offset, &(tri_proj.vertex[2]));
 
-		//Get half the hight and width of the screen resolution
-		float h_height= scene->window.height/2.0f;
-		float h_width = scene->window.width/2.0f;
+		for(int i = 0; i < n_tris_clip; i++)
+		{	
+			//If the triangle is visible to the camera, proceed to calculate the projection of it
+			//Do the multiplication of the vector of the vertex with the projection matrix
+			//The result is the projection of the vertex at the screen (values between -1 and 1) from the center
+			multiply_vector_matrix(&(tris_clip[i].vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
+			multiply_vector_matrix(&(tris_clip[i].vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
+			multiply_vector_matrix(&(tris_clip[i].vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
 
-		//Adjust the range from [0,2] to the width and height
-		//Multiply the x value with the width to get the x value in the range of the screen width
-		//For the height is the same but proportional to the width
-		tri_proj.vertex[0].x *= h_width;	tri_proj.vertex[0].y = h_height*2 - tri_proj.vertex[0].y * h_height;
-		tri_proj.vertex[1].x *= h_width;	tri_proj.vertex[1].y = h_height*2 - tri_proj.vertex[1].y * h_height;
-		tri_proj.vertex[2].x *= h_width;	tri_proj.vertex[2].y = h_height*2 - tri_proj.vertex[2].y * h_height;
+			//Scale the view (it used to be included in the vector matrix mul, but removed so it has to do this manually)
+			vector_div(&(tri_proj.vertex[0]), tri_proj.vertex[0].w, &(tri_proj.vertex[0]));
+			vector_div(&(tri_proj.vertex[1]), tri_proj.vertex[1].w, &(tri_proj.vertex[1]));
+			vector_div(&(tri_proj.vertex[2]), tri_proj.vertex[2].w, &(tri_proj.vertex[2]));
 
-		//Get out the triangle information to raster
-		tri_ras->vertex[0].x = tri_proj.vertex[0].x;	tri_ras->vertex[0].y = tri_proj.vertex[0].y;	tri_ras->vertex[0].z = tri_proj.vertex[0].z;
-		tri_ras->vertex[1].x = tri_proj.vertex[1].x;	tri_ras->vertex[1].y = tri_proj.vertex[1].y;	tri_ras->vertex[1].z = tri_proj.vertex[1].z;
-		tri_ras->vertex[2].x = tri_proj.vertex[2].x;	tri_ras->vertex[2].y = tri_proj.vertex[2].y;	tri_ras->vertex[2].z = tri_proj.vertex[2].z;
-		
-		//Get the brightness of the triangle
-		tri_ras->brightness = vector_dot_prod(&(scene->light), &normal);
-		if (tri_ras->brightness < 0) tri_ras->brightness = 0;
+
+			//Add 1 so the value is not negative and (0,0) is the top left corner and the range is [0,2]
+			vec3d_t v_offset = {1,1,0,0};
+
+			add_vectors(&(tri_proj.vertex[0]), &v_offset, &(tri_proj.vertex[0]));
+			add_vectors(&(tri_proj.vertex[1]), &v_offset, &(tri_proj.vertex[1]));
+			add_vectors(&(tri_proj.vertex[2]), &v_offset, &(tri_proj.vertex[2]));
+
+			//Get half the hight and width of the screen resolution
+			float h_height= scene->window.height/2.0f;
+			float h_width = scene->window.width/2.0f;
+
+			//Adjust the range from [0,2] to the width and height
+			//Multiply the x value with the width to get the x value in the range of the screen width
+			//For the height is the same but proportional to the width
+			tri_proj.vertex[0].x *= h_width;	tri_proj.vertex[0].y = h_height*2 - tri_proj.vertex[0].y * h_height;
+			tri_proj.vertex[1].x *= h_width;	tri_proj.vertex[1].y = h_height*2 - tri_proj.vertex[1].y * h_height;
+			tri_proj.vertex[2].x *= h_width;	tri_proj.vertex[2].y = h_height*2 - tri_proj.vertex[2].y * h_height;
+
+			//Get out the triangle information to raster
+
+			tri_proj.color = tris_clip[i].color;
+
+
+			//Get the brightness of the triangle
+			tri_proj.brightness = vector_dot_prod(&(scene->light), &normal);
+			if (tri_proj.brightness < 0) tri_proj.brightness = 0;
+
+			tri_proj.vertex[0].z = tris_clip[i].vertex[0].z;
+			tri_proj.vertex[1].z = tris_clip[i].vertex[1].z;
+			tri_proj.vertex[2].z = tris_clip[i].vertex[2].z;
+
+			//Add the triangle to raster to the queue
+			add_triangle(tri_q, &tri_proj);
+		}
+
 	}
-	else
-	{	
-		//In case the triangle is not necessary to raster (is not seen by the camera) set all coords of all vertex to 0	
-		tri_ras->vertex[0].x = 0;	tri_ras->vertex[0].y = 0;	tri_ras->vertex[0].z = 0;
-		tri_ras->vertex[1].x = 0;	tri_ras->vertex[1].y = 0;	tri_ras->vertex[1].z = 0;
-		tri_ras->vertex[2].x = 0;	tri_ras->vertex[2].y = 0;	tri_ras->vertex[2].z = 0;
-	}
-
-
 
 }
 
 void raster_triangle(scene_t* scene, triangle_t* tri)
 {
 	//Calculate the color depending on the brightness	
-	tri->color.r = 255*tri->brightness;
-	tri->color.g = 0*tri->brightness;
-	tri->color.b = 255/2*tri->brightness;
+	rgb_t color_raster;
+	color_raster.r = tri->color.r*tri->brightness;
+	color_raster.g = tri->color.g*tri->brightness;
+	color_raster.b = tri->color.b*tri->brightness;
 
 	//Create a screen vector (2D) for each triangle vertex projection
 	screen_vect_t v1, v2, v3;
@@ -507,21 +585,133 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 	v2.x = tri->vertex[1].x; v2.y = tri->vertex[1].y;
 	v3.x = tri->vertex[2].x; v3.y = tri->vertex[2].y;	
 
-	printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
+	/*printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
 	printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
-	printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);
-	GPC_paint_triangle(scene, v1, v2, v3, tri->color);
+	printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);*/
+	GPC_paint_triangle(scene, v1, v2, v3, color_raster);
 
 	//Decoment if wanted all triangles borders to be drawn
-	/*	
-	SDL_SetRenderDrawColor(gp_renderer, 255, 0, 255/2, 255);
+		
+	SDL_SetRenderDrawColor(gp_renderer, 255, 0, 255, 255);
 	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
 	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
 	SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
-	*/
 		
 }
 
+
+int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2)
+{
+	vec3d_t plane_n_n;
+	normalise_vector(plane_n, &plane_n_n);
+
+	//Calculate the distance between each vertex of triangle and the plane
+	float dist[3];
+	dist[0] = dist_point_plane(plane_p, plane_n, &(tri_in->vertex[0]));
+	dist[1] = dist_point_plane(plane_p, plane_n, &(tri_in->vertex[1]));
+	dist[2] = dist_point_plane(plane_p, plane_n, &(tri_in->vertex[2]));
+
+	//Arrays of vec3d_t pointers to store each vertex depending if it's in the border or out
+	vec3d_t* inside_points[3];		int n_inside_points = 0;
+	vec3d_t* outside_points[3]; 	int n_outside_points = 0;
+
+	//Add the vertex to the corresponding array and increment the counter
+	if(dist[0] >= 0){ inside_points[n_inside_points++] = &(tri_in->vertex[0]);}
+	else{ outside_points[n_outside_points++] = &(tri_in->vertex[0]);}
+
+	if(dist[1] >= 0){ inside_points[n_inside_points++] = &(tri_in->vertex[1]);}
+	else{ outside_points[n_outside_points++] = &(tri_in->vertex[1]);}
+
+	if(dist[2] >= 0){ inside_points[n_inside_points++] = &(tri_in->vertex[2]);}
+	else{ outside_points[n_outside_points++] = &(tri_in->vertex[2]);}
+
+	//Return the values depending on the case of clipping we got
+
+	if(n_inside_points == 0){ return 0; }
+
+
+	if(n_inside_points == 3)
+	{
+		*tri_out1 = *tri_in;
+		tri_out1->color = (rgb_t){255, 0, 0};
+		return 1;
+	}
+
+	if(n_inside_points == 1 && n_outside_points == 2)
+	{
+		//Copy the color and brightness of original triangle to the clipped
+		tri_out1->color = (rgb_t){0,255,0};
+		tri_out1->brightness = tri_in->brightness;
+
+		tri_out1->vertex[0] = *inside_points[0];
+
+		//Add as vertex of clipped triangle the intersection points between point_inside - plane - points_outside
+		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[0], &(tri_out1->vertex[1]));
+		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[1], &(tri_out1->vertex[2]));
+		
+		return 1;
+	}
+
+	if(n_inside_points == 2 && n_outside_points == 1)
+	{
+		//Copy the color and brightness of original triangle to the clipped
+		tri_out1->color = (rgb_t){0,0,255};
+		tri_out1->brightness = tri_in->brightness;
+
+		tri_out2->color = (rgb_t){255,255,0};
+		tri_out2->brightness = tri_in->brightness;
+
+		//Get the first triangle output
+		tri_out1->vertex[0] = *inside_points[0];
+		tri_out1->vertex[1] = *inside_points[1];
+		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[0], &(tri_out1->vertex[2]));
+
+		//Get the second triangle output
+		tri_out2->vertex[0] = *inside_points[1];
+		tri_out2->vertex[1] = tri_out1->vertex[2];
+		vector_intersect_plane(plane_p, &plane_n_n, inside_points[1], outside_points[0], &(tri_out2->vertex[2]));
+
+		return 2;
+	}
+
+	return 0;
+
+}
+
+
+//------------- TRIANGLE QUEUE FUNCTIONS --------------------------------
+
+void ini_triangle_queue(triangle_queue_t* q, triangle_t tri_array[], int max)
+{
+	q->n_tris = 0;
+	q->q = tri_array;
+	q->max = max;
+}
+
+void add_triangle(triangle_queue_t* q, triangle_t* tri)
+{
+	if(q->n_tris != q->max)
+	{
+		q->q[q->n_tris] = *tri;
+		q->n_tris++;
+	}
+}
+
+void next_triangle(triangle_queue_t* q, triangle_t* next_tri)
+{
+	triangle_t tri_out = q->q[0];
+	int n = q->n_tris;
+
+	//Move forward one position in queue
+	for(int i = 1; i < n; i++)
+	{
+		q->q[i-1] = q->q[i];
+	}
+
+	q->n_tris --;
+
+	*next_tri = tri_out;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////// 		SCREEN DRAWING FUNCTIONS 		/////////////////////////////////////////////////
@@ -653,8 +843,7 @@ void update_matrices(scene_t* scene)
 
 	vec3d_t target;
 	add_vectors(&(scene->camera.pos), &(scene->camera.look_dir), &target);
-	vec3d_t up;
-	up.x = 0;	up.y = 1;	up.z = 0;	up.w = 1;
+	vec3d_t up = {.x = 0, .y =1, .z = 0, .w = 1};
 	rotation_direction_matrix_inv(&rot_cam_matrix, &(scene->camera.pos), &target, &up);
 }
 
@@ -915,6 +1104,61 @@ void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr)
 	}
 
 	
+}
+
+
+/*void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+{
+	vec3d_t line_vect;
+	//Get the directional vector of the line
+	sub_vectors(line_end, line_start, &line_vect);
+
+	//Get the sum of plane point and line starting point
+	vec3d_t sum_p_plane_line;
+	add_vectors(plane_p, line_start, &sum_p_plane_line);
+
+	//Get the dot product of N*(P+r0) and negate it
+	float a = -vector_dot_prod(plane_n, &sum_p_plane_line);
+
+	//Get the dot product of N*vr
+	float b = vector_dot_prod(plane_n, &line_vect);
+
+	float t = a/b;
+
+	//Get the vector that points to the interset point
+	vector_mul(&line_vect, t, &line_vect);
+	//Add the vector to the starting point of line to get the intersect point
+	add_vectors(line_start, &line_vect, inter_p);
+
+}*/
+
+void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+{
+	vec3d_t plane_nn;
+	normalise_vector(plane_n, &plane_nn);
+
+	float plane_d = -vector_dot_prod(&plane_nn, plane_p);
+	float ad = vector_dot_prod(line_start, &plane_nn);
+	float bd = vector_dot_prod(line_end, &plane_nn);
+	float t = (-plane_d - ad) / (bd - ad);
+	vec3d_t line_start_to_end;
+	sub_vectors(line_end, line_start, &line_start_to_end);
+	vec3d_t line_to_intersect;
+	vector_mul(&line_start_to_end, t, &line_to_intersect);
+	vec3d_t inter_point;
+	add_vectors(line_start, &line_to_intersect, &inter_point);
+	*inter_p = inter_point;
+
+}
+
+
+float dist_point_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* point)
+{	
+	//Assure that the plane normal is normalised
+	vec3d_t plane_n_n;
+	normalise_vector(plane_n, &plane_n_n);
+
+	return (plane_n_n.x*point->x + plane_n_n.y*point->y + plane_n_n.z*point->z - vector_dot_prod(&plane_n_n, plane_p));
 }
 
 

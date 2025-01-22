@@ -11,7 +11,7 @@
 
 //------- GPSCENECREATOR DEFINES ------------------
 //Number of keys used from keyboard
-#define NUM_OF_KEYS 9
+#define NUM_OF_KEYS 11
 
 
 
@@ -45,6 +45,14 @@ typedef struct
 
 typedef struct
 {
+	triangle_t* q;
+	int n_tris;	
+	int max;
+} triangle_queue_t;
+
+
+typedef struct
+{
 	int n_tris;
 	triangle_t tris[MAX_TRI_MESH];
 } mesh_t;
@@ -70,7 +78,9 @@ typedef enum
 	KEY_space,
 	KEY_lshift,
 	KEY_left,
-	KEY_right
+	KEY_right,
+	KEY_up,
+	KEY_down
 } keys_enum;
 
 
@@ -85,6 +95,7 @@ typedef struct
 	vec3d_t pos;
 	vec3d_t look_dir;
 	float rot_y_angle;
+	float rot_x_angle;
 	float z_near;
 	float z_far;
 	float fov;
@@ -108,8 +119,9 @@ bool create_window(scene_t* scene, char window_name[]);
 void start_scene(scene_t* scene);
 void process_input(scene_t* scene);
 void update_scene(scene_t* scene);
-void move_camera(scene_t* scene, float x, float y, float z);
-void rotate_camera(scene_t* scene, int dir);
+void move_camera(scene_t* scene, float forward, float up, float right);
+void rotate_camera(scene_t* scene, int dir_x, int dir_y);
+void update_camera_look_dir(scene_t* scene);
 void render_scene(scene_t* scene);
 void stop_scene();
 
@@ -118,9 +130,15 @@ void stop_scene();
 
 void initialize_meshes(mesh_t meshes[]);
 void render_meshes(scene_t* scene, mesh_t meshes[]);
-void process_triangle(scene_t* scene, triangle_t* tri, triangle_t* tri_ras);
+void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
+int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
 void raster_triangle(scene_t* scene, triangle_t* tri);
 void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, rgb_t color);
+
+//--------- TRIANGLE QUEUE FUNCTIONS -------------------------------------
+void ini_triangle_queue(triangle_queue_t* q, triangle_t tri_array[], int max);
+void add_triangle(triangle_queue_t* q, triangle_t* tri);
+void next_triangle(triangle_queue_t* q, triangle_t* next_tri);
 
 //-------- VECTOR AND MATRIX FUNCTIONS ------------------------------------
 
@@ -148,6 +166,8 @@ float vector_length(vec3d_t* v);
 void normalise_vector(vec3d_t* v, vec3d_t* vn);
 void vector_cross_prod(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr);
 void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr);
+void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p);
+float dist_point_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* point);
 
 
 

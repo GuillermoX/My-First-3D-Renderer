@@ -11,5 +11,9 @@ $(MAIN): ./source/*.c ./include/*.h
 run:
 	./$(MAIN)
 
+debug:
+	gcc -Wall -g ./source/*.c $(INCLUDE) $(LIBS) -o $(MAIN)
+	gdb ./$(MAIN)
+
 clean:
 	rm ./$(MAIN)
