@@ -7,7 +7,7 @@
 #define FPS 40
 #define FRAME_TARGET_TIME 1000/FPS
 
-#define MOVE_VEL 30
+#define MOVE_VEL 20
 #define ROTATE_VEL 100
 #define UP_DOWN_VEL 8
 
@@ -59,9 +59,9 @@ void start_scene(scene_t* scene)
 	scene->camera.aspect_ratio = (float)scene->window.height / (float)scene->window.width;
 
 	//Start the simple illumination
-	scene->light.x = -0.2;
-	scene->light.y = 1;
-	scene->light.z = -1;	
+	scene->light.x = -0.3;
+	scene->light.y = 0.6;
+	scene->light.z = 1;	
 	//Normalize ilumination vector
 	float l_lenth = sqrt(scene->light.x*scene->light.x + scene->light.y*scene->light.y + scene->light.z*scene->light.z);
 	scene->light.x /= l_lenth; scene->light.y /= l_lenth; scene->light.z /= l_lenth;
@@ -366,7 +366,7 @@ void initialize_meshes(mesh_t meshes[])
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
-		vec3d_t verts[3000];
+		vec3d_t verts[10000];
 
 		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
@@ -380,17 +380,20 @@ void initialize_meshes(mesh_t meshes[])
 		//Initialize the number of triangles of the mesh to 0
 		meshes[0].n_tris = 0;
 
+		int n_lines_read = 0;
+			
+		char line[256];
 		//Load all the vertex to a buffer and the faces/triangles to the mesh
-		while (!feof(f))
+		while (fgets(line, sizeof(line), f))
 		{
-			fscanf(f, "%c ", &type_line);
+			sscanf(line, "%c", &type_line);
 			switch (type_line)
 			{
-				case 'v': fscanf(f, "%f %f %f\n", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
+				case 'v': sscanf(line, "v %f %f %f", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
 					  verts[vert_i].w = 1.0f;
 					  vert_i ++;
 					break;
-				case 'f': fscanf(f, "%d %d %d\n", &i_v1, &i_v2, &i_v3);
+				case 'f': sscanf(line, "f %d %d %d", &i_v1, &i_v2, &i_v3);
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].x = verts[i_v1].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].y = verts[i_v1].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[0].z = verts[i_v1].z;
@@ -399,18 +402,21 @@ void initialize_meshes(mesh_t meshes[])
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v2].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v2].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v2].z;
-					  meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v1].w;
+					  meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v2].w;
 
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v3].x;
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v3].y;
 					  meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v3].z;
-					  meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v1].w;
+					  meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v3].w;
 
 					  meshes[0].n_tris ++;
 					break;
 
-				default: fscanf(f, "\n");
+				default: printf("Tipo no reconocido\n");
 			}
+
+			n_lines_read++;
+			printf("Linea: %d\n", n_lines_read);
 		}
 		fclose(f);
 
