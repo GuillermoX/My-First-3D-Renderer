@@ -7,8 +7,8 @@
 #define FPS 40
 #define FRAME_TARGET_TIME 1000/FPS
 
-#define MOVE_VEL 8
-#define ROTATE_VEL 50
+#define MOVE_VEL 30
+#define ROTATE_VEL 100
 #define UP_DOWN_VEL 8
 
 //FPS Control variables
@@ -44,8 +44,8 @@ void start_scene(scene_t* scene)
 	strcpy(scene->name, "3D Renderer");
 
 	//Here you can change the scene initial parameters
-	scene->window.height = 700;
-	scene->window.width = 1200;
+	scene->window.height = 1000;
+	scene->window.width = 1900;
 
 	//Start the camera properties
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
@@ -59,7 +59,7 @@ void start_scene(scene_t* scene)
 	scene->camera.aspect_ratio = (float)scene->window.height / (float)scene->window.width;
 
 	//Start the simple illumination
-	scene->light.x = -1;
+	scene->light.x = -0.2;
 	scene->light.y = 1;
 	scene->light.z = -1;	
 	//Normalize ilumination vector
@@ -247,12 +247,14 @@ void update_scene(scene_t* scene)
 	if(gp_keys[KEY_up]) rotate_camera(scene, -1, 0);
 	if(gp_keys[KEY_down]) rotate_camera(scene, 1, 0);
 	//Increase the rotation angle
-	//angle += 80*delta_time;
+	//angle += 30*delta_time;
 
 	update_camera_look_dir(scene);
 	update_matrices(scene);
 
-	printf("\nAngle: %f", scene->camera.rot_y_angle);
+	printf("\nAngle Y: %f", scene->camera.rot_y_angle);
+	printf("\nAngle X: %f", scene->camera.rot_x_angle);
+	printf("\nDir -- x: %f\ty: %f\tz: %f", scene->camera.look_dir.x, scene->camera.look_dir.y, scene->camera.look_dir.z);
 
 
 }
@@ -286,9 +288,15 @@ void rotate_camera(scene_t* scene, int dir_x, int dir_y)
 	rotation_matrix_y(&rot, dir_y*ROTATE_VEL*delta_time*RAD_CONVERT);
 	multiply_vector_matrix(&(scene->camera.look_dir), &rot, &(scene->camera.look_dir));*/
 	scene->camera.rot_x_angle += dir_x*ROTATE_VEL*delta_time;
-	if(scene->camera.rot_x_angle >= 360 || scene->camera.rot_x_angle <= -360){
-		scene->camera.rot_x_angle = 0 + dir_x*ROTATE_VEL*delta_time;
+	if(scene->camera.rot_x_angle >= 89)
+	{
+		scene->camera.rot_x_angle = 89;
 	}
+	else if(scene->camera.rot_x_angle <= -89)
+	{
+		scene->camera.rot_x_angle = -89;
+	}
+	
 
 	scene->camera.rot_y_angle += dir_y*ROTATE_VEL*delta_time;
 	if(scene->camera.rot_y_angle >= 360 || scene->camera.rot_y_angle <= -360){
@@ -301,11 +309,14 @@ void rotate_camera(scene_t* scene, int dir_x, int dir_y)
 void update_camera_look_dir(scene_t* scene)
 {
 	mat4x4_t rot;
+	
 	rotation_matrix_x(&rot, scene->camera.rot_x_angle*RAD_CONVERT);
-	multiply_vector_matrix(&((vec3d_t){0,0,1,1}), &rot, &(scene->camera.look_dir));
+	multiply_vector_matrix(&((vec3d_t){.x=0, .y=0, .z=1, .w=0}), &rot, &(scene->camera.look_dir));
 
 	rotation_matrix_y(&rot, scene->camera.rot_y_angle*RAD_CONVERT);
 	multiply_vector_matrix(&(scene->camera.look_dir), &rot, &(scene->camera.look_dir));
+
+	//normalise_vector(&(scene->camera.look_dir), &(scene->camera.look_dir));
 }
 
 
@@ -327,6 +338,13 @@ void render_scene(scene_t* scene)
 	//SDL_RenderDrawLine(gp_renderer, 100, 30, 200, 200);
 
 	render_meshes(scene, meshes);
+
+	//Crosshair
+	int half_h = (scene->window.height/2);
+	int half_w = (scene->window.width/2);
+	SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
+	SDL_RenderDrawLine(gp_renderer, half_w, half_h - 3, half_w, half_h + 3);
+	SDL_RenderDrawLine(gp_renderer, half_w - 3, half_h, half_w + 3, half_h);
 
 	//Show the final render result
 	SDL_RenderPresent(gp_renderer);
@@ -435,8 +453,8 @@ void render_meshes(scene_t* scene, mesh_t meshes[])
 
 		//Queue of triangles to raster
 		triangle_queue_t tri_q;
-		triangle_t array_raster_q[n_tris*3];
-		ini_triangle_queue(&tri_q, array_raster_q, n_tris*3);
+		triangle_t array_raster_q[n_tris*2];
+		ini_triangle_queue(&tri_q, array_raster_q, n_tris*2);
 
 		for(int j=0; j < n_tris; j++)
 		{	
@@ -509,8 +527,10 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q)
 		multiply_vector_matrix(&(tri_trans.vertex[2]), &rot_cam_matrix, &(tri_rotated.vertex[2]));
 
 		triangle_t tris_clip[2];	int n_tris_clip = 0;
-		vec3d_t plane_p = {.x = 0, .y = 0, .z = scene->camera.z_near+3};
+		vec3d_t plane_p = {.x = 0, .y = 0, .z = scene->camera.z_near};
 		vec3d_t plane_n = {.x = 0, .y = 0, .z = 1};
+
+		tri_rotated.color = (rgb_t){200, 200, 200};
 
 
 		n_tris_clip = triangle_clip_against_plane(&plane_p, &plane_n, &tri_rotated, &tris_clip[0], &tris_clip[1]);
@@ -572,30 +592,83 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q)
 
 void raster_triangle(scene_t* scene, triangle_t* tri)
 {
-	//Calculate the color depending on the brightness	
-	rgb_t color_raster;
-	color_raster.r = tri->color.r*tri->brightness;
-	color_raster.g = tri->color.g*tri->brightness;
-	color_raster.b = tri->color.b*tri->brightness;
 
-	//Create a screen vector (2D) for each triangle vertex projection
-	screen_vect_t v1, v2, v3;
-					
-	v1.x = tri->vertex[0].x; v1.y = tri->vertex[0].y;
-	v2.x = tri->vertex[1].x; v2.y = tri->vertex[1].y;
-	v3.x = tri->vertex[2].x; v3.y = tri->vertex[2].y;	
+	triangle_queue_t raster_q;
+	triangle_t raster_array[300];
+	ini_triangle_queue(&raster_q, raster_array, 300);
+	add_triangle(&raster_q, tri);
 
-	/*printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
-	printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
-	printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);*/
-	GPC_paint_triangle(scene, v1, v2, v3, color_raster);
+	triangle_t clipped[2];
+	int n_new_tris = 1;
 
-	//Decoment if wanted all triangles borders to be drawn
-		
-	SDL_SetRenderDrawColor(gp_renderer, 255, 0, 255, 255);
-	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
-	SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
-	SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
+	float screen_h = scene->window.height - 1;
+	float screen_w = scene->window.width - 1;
+
+	for(int p = 0; p < 4; p++)
+	{
+		int n_tris_to_add = 0;
+		while(n_new_tris > 0)
+		{
+			triangle_t tri_to_clip;
+			next_triangle(&raster_q, &tri_to_clip);
+			n_new_tris--;
+
+			switch (p)
+			{
+				case 0: n_tris_to_add = triangle_clip_against_plane(&(vec3d_t){0,0,0}, &(vec3d_t){0,1,0}, &tri_to_clip, &clipped[0], &clipped[1]);
+						break;
+				case 1: n_tris_to_add = triangle_clip_against_plane(&(vec3d_t){0,screen_h,0}, &(vec3d_t){0,-1,0}, &tri_to_clip, &clipped[0], &clipped[1]);
+						break;
+				case 2: n_tris_to_add = triangle_clip_against_plane(&(vec3d_t){0,0,0}, &(vec3d_t){1,0,0}, &tri_to_clip, &clipped[0], &clipped[1]);
+						break;
+				case 3: n_tris_to_add = triangle_clip_against_plane(&(vec3d_t){screen_w,0,0}, &(vec3d_t){-1,0,0}, &tri_to_clip, &clipped[0], &clipped[1]);
+						break;
+			}
+
+			for(int i = 0; i < n_tris_to_add; i++)
+			{
+				add_triangle(&raster_q, &clipped[i]);
+			}
+
+		}
+
+		n_new_tris = raster_q.n_tris;
+	
+	}
+
+	while(raster_q.n_tris > 0)
+	{
+
+
+		//Create a screen vector (2D) for each triangle vertex projection
+		triangle_t tri_raster;
+		next_triangle(&raster_q, &tri_raster);
+
+		//Calculate the color depending on the brightness	
+		rgb_t color_raster;
+		color_raster.r = tri_raster.color.r*tri_raster.brightness;
+		color_raster.g = tri_raster.color.g*tri_raster.brightness;
+		color_raster.b = tri_raster.color.b*tri_raster.brightness;
+
+		screen_vect_t v1, v2, v3;
+			
+
+		v1.x = tri_raster.vertex[0].x; v1.y = tri_raster.vertex[0].y;
+		v2.x = tri_raster.vertex[1].x; v2.y = tri_raster.vertex[1].y;
+		v3.x = tri_raster.vertex[2].x; v3.y = tri_raster.vertex[2].y;	
+
+		/*printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
+		printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
+		printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);*/
+		GPC_paint_triangle(scene, v1, v2, v3, color_raster);
+
+		//Decoment if wanted all triangles borders to be drawn
+
+		/*SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
+		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
+		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
+		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);*/
+	}
 		
 }
 
@@ -633,14 +706,13 @@ int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* 
 	if(n_inside_points == 3)
 	{
 		*tri_out1 = *tri_in;
-		tri_out1->color = (rgb_t){255, 0, 0};
 		return 1;
 	}
 
 	if(n_inside_points == 1 && n_outside_points == 2)
 	{
 		//Copy the color and brightness of original triangle to the clipped
-		tri_out1->color = (rgb_t){0,255,0};
+		tri_out1->color = tri_in->color;
 		tri_out1->brightness = tri_in->brightness;
 
 		tri_out1->vertex[0] = *inside_points[0];
@@ -655,10 +727,10 @@ int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* 
 	if(n_inside_points == 2 && n_outside_points == 1)
 	{
 		//Copy the color and brightness of original triangle to the clipped
-		tri_out1->color = (rgb_t){0,0,255};
+		tri_out1->color = tri_in->color;
 		tri_out1->brightness = tri_in->brightness;
 
-		tri_out2->color = (rgb_t){255,255,0};
+		tri_out2->color = tri_in->color;
 		tri_out2->brightness = tri_in->brightness;
 
 		//Get the first triangle output
@@ -1022,10 +1094,14 @@ void projection_matrix (mat4x4_t* matrix, float fov, float aspect_r, float z_far
 
 void multiply_vector_matrix(vec3d_t* in, mat4x4_t* mat, vec3d_t* out)
 {
-	out->x = in->x * mat->m[0][0] + in->y * mat->m[1][0] + in->z * mat->m[2][0] + in->w * mat->m[3][0];
-	out->y = in->x * mat->m[0][1] + in->y * mat->m[1][1] + in->z * mat->m[2][1] + in->w * mat->m[3][1];
-	out->z = in->x * mat->m[0][2] + in->y * mat->m[1][2] + in->z * mat->m[2][2] + in->w * mat->m[3][2];
-	out->w = in->x * mat->m[0][3] + in->y * mat->m[1][3] + in->z * mat->m[2][3] + in->w * mat->m[3][3];
+	vec3d_t out_vec;
+
+	out_vec.x = in->x * mat->m[0][0] + in->y * mat->m[1][0] + in->z * mat->m[2][0] + in->w * mat->m[3][0];
+	out_vec.y = in->x * mat->m[0][1] + in->y * mat->m[1][1] + in->z * mat->m[2][1] + in->w * mat->m[3][1];
+	out_vec.z = in->x * mat->m[0][2] + in->y * mat->m[1][2] + in->z * mat->m[2][2] + in->w * mat->m[3][2];
+	out_vec.w = in->x * mat->m[0][3] + in->y * mat->m[1][3] + in->z * mat->m[2][3] + in->w * mat->m[3][3];
+
+	*out = out_vec;
 }
 
 void add_vectors(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr)
@@ -1107,18 +1183,18 @@ void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr)
 }
 
 
-/*void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
 {
 	vec3d_t line_vect;
 	//Get the directional vector of the line
 	sub_vectors(line_end, line_start, &line_vect);
 
 	//Get the sum of plane point and line starting point
-	vec3d_t sum_p_plane_line;
-	add_vectors(plane_p, line_start, &sum_p_plane_line);
+	vec3d_t sub_p_plane_line;
+	sub_vectors(plane_p, line_start, &sub_p_plane_line);
 
 	//Get the dot product of N*(P+r0) and negate it
-	float a = -vector_dot_prod(plane_n, &sum_p_plane_line);
+	float a = vector_dot_prod(plane_n, &sub_p_plane_line);
 
 	//Get the dot product of N*vr
 	float b = vector_dot_prod(plane_n, &line_vect);
@@ -1130,9 +1206,9 @@ void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr)
 	//Add the vector to the starting point of line to get the intersect point
 	add_vectors(line_start, &line_vect, inter_p);
 
-}*/
+}
 
-void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+/*void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
 {
 	vec3d_t plane_nn;
 	normalise_vector(plane_n, &plane_nn);
@@ -1149,7 +1225,7 @@ void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_st
 	add_vectors(line_start, &line_to_intersect, &inter_point);
 	*inter_p = inter_point;
 
-}
+}*/
 
 
 float dist_point_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* point)
