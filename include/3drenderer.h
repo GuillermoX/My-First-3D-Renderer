@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 //------- 3D MATH DEFINES -------------------------
-#define MAX_TRI_MESH 7000
+#define MAX_TRI_MESH 10000
 #define RAD_CONVERT 2*M_PI/360
 
 //------- GPSCENECREATOR DEFINES ------------------
@@ -33,12 +33,19 @@ typedef struct
 
 typedef struct
 {
+	float u, v;
+} vec2d_t; 
+
+
+typedef struct
+{
 	float x, y, z, w;
 } vec3d_t;
 
 typedef struct
 {
-	vec3d_t vertex[3];
+	vec3d_t vertex[3];		//Space coord
+	vec2d_t t[3];			//Texture coords
 	rgb_t color;
 	float brightness;
 } triangle_t;
@@ -133,7 +140,7 @@ void render_meshes(scene_t* scene, mesh_t meshes[]);
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
 void raster_triangle(scene_t* scene, triangle_t* tri);
-void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, rgb_t color);
+void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1, screen_vect_t* v2, screen_vect_t* v3, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color);
 
 //--------- TRIANGLE QUEUE FUNCTIONS -------------------------------------
 void ini_triangle_queue(triangle_queue_t* q, triangle_t tri_array[], int max);

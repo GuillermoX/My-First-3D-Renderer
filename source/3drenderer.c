@@ -1,13 +1,15 @@
 #include "../include/3drenderer.h"
+#include "./texture.c"
 
 //--------- OBJECT DEFINES ---------------------------------------------------
 #define N_MESHES 1
+#define TEXTURE_ON 1
 
 //--------- FRAME DEFINITIONS ------------------------------
 #define FPS 40
 #define FRAME_TARGET_TIME 1000/FPS
 
-#define MOVE_VEL 20
+#define MOVE_VEL 8
 #define ROTATE_VEL 100
 #define UP_DOWN_VEL 8
 
@@ -252,9 +254,9 @@ void update_scene(scene_t* scene)
 	update_camera_look_dir(scene);
 	update_matrices(scene);
 
-	printf("\nAngle Y: %f", scene->camera.rot_y_angle);
+	/*printf("\nAngle Y: %f", scene->camera.rot_y_angle);
 	printf("\nAngle X: %f", scene->camera.rot_x_angle);
-	printf("\nDir -- x: %f\ty: %f\tz: %f", scene->camera.look_dir.x, scene->camera.look_dir.y, scene->camera.look_dir.z);
+	printf("\nDir -- x: %f\ty: %f\tz: %f", scene->camera.look_dir.x, scene->camera.look_dir.y, scene->camera.look_dir.z);*/
 
 
 }
@@ -367,15 +369,18 @@ void initialize_meshes(mesh_t meshes[])
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
 		vec3d_t verts[10000];
+		vec2d_t text_v[10000];
 
 		//Character of the .obj file that indicates if the information of the line is a vertex or a triangle
 		char type_line;
 
 		//Initialize at 1 because .obj file starts counting the first vertex as 1
 		int vert_i = 1;
+		int vert_text_i = 1;
 
 		//Index of the vertex of a triangle
 		int i_v1, i_v2, i_v3;
+		int i_vt1, i_vt2, i_vt3;
 
 		//Initialize the number of triangles of the mesh to 0
 		meshes[0].n_tris = 0;
@@ -389,34 +394,67 @@ void initialize_meshes(mesh_t meshes[])
 			sscanf(line, "%c", &type_line);
 			switch (type_line)
 			{
-				case 'v': sscanf(line, "v %f %f %f", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
-					  verts[vert_i].w = 1.0f;
-					  vert_i ++;
-					break;
-				case 'f': sscanf(line, "f %d %d %d", &i_v1, &i_v2, &i_v3);
-					  meshes[0].tris[meshes[0].n_tris].vertex[0].x = verts[i_v1].x;
-					  meshes[0].tris[meshes[0].n_tris].vertex[0].y = verts[i_v1].y;
-					  meshes[0].tris[meshes[0].n_tris].vertex[0].z = verts[i_v1].z;
-					  meshes[0].tris[meshes[0].n_tris].vertex[0].w = verts[i_v1].w;
-
-					  meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v2].x;
-					  meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v2].y;
-					  meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v2].z;
-					  meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v2].w;
-
-					  meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v3].x;
-					  meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v3].y;
-					  meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v3].z;
-					  meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v3].w;
-
-					  meshes[0].n_tris ++;
+				case 'v': 
+					if(line[1] == 't')
+					{	
+						sscanf(line, "vt %f %f", &text_v[vert_text_i].u, &text_v[vert_text_i].v);
+						printf("vertex text - u: %f  v: %f\n", text_v[vert_text_i].u ,text_v[vert_text_i].v);
+						vert_text_i++;
+					}
+					else
+					{	
+						sscanf(line, "v %f %f %f", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
+						printf("vertex - x: %f  y: %f  z: %f\n", verts[vert_i].x, verts[vert_i].y, verts[vert_i].z);
+						verts[vert_i].w = 1.0f;
+						vert_i ++;
+					}
 					break;
 
+				case 'f': 
+					if(TEXTURE_ON)
+					{
+						sscanf(line, "f %d/%d %d/%d %d/%d", &i_v1, &i_vt1, &i_v2, &i_vt2, &i_v3, &i_vt3);
+						printf("face - vertex: %d %d %d - vertex text: %d %d %d\n", i_v1, i_v2, i_v3, i_vt1, i_vt2, i_vt3);
+
+						meshes[0].tris[meshes[0].n_tris].t[0].u = text_v[i_vt1].u;
+						meshes[0].tris[meshes[0].n_tris].t[0].v = text_v[i_vt1].v;
+
+						meshes[0].tris[meshes[0].n_tris].t[1].u = text_v[i_vt2].u;
+						meshes[0].tris[meshes[0].n_tris].t[1].v = text_v[i_vt2].v;
+
+						meshes[0].tris[meshes[0].n_tris].t[2].u = text_v[i_vt3].u;
+						meshes[0].tris[meshes[0].n_tris].t[2].v = text_v[i_vt3].v;
+
+					}
+					else
+					{
+						sscanf(line, "f %d %d %d", &i_v1, &i_v2, &i_v3);
+						printf("face - vertex: %d %d %d\n", i_v1, i_v2, i_v3);
+					}
+
+					meshes[0].tris[meshes[0].n_tris].vertex[0].x = verts[i_v1].x;
+					meshes[0].tris[meshes[0].n_tris].vertex[0].y = verts[i_v1].y;
+					meshes[0].tris[meshes[0].n_tris].vertex[0].z = verts[i_v1].z;
+					meshes[0].tris[meshes[0].n_tris].vertex[0].w = verts[i_v1].w;
+
+					meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v2].x;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v2].y;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v2].z;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v2].w;
+
+					meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v3].x;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v3].y;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v3].z;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v3].w;
+
+					meshes[0].n_tris ++;
+					break;
+				
 				default: printf("Tipo no reconocido\n");
 			}
 
 			n_lines_read++;
-			printf("Linea: %d\n", n_lines_read);
+			//printf("Linea: %d\n", n_lines_read);
 		}
 		fclose(f);
 
@@ -657,6 +695,7 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 		color_raster.b = tri_raster.color.b*tri_raster.brightness;
 
 		screen_vect_t v1, v2, v3;
+		vec2d_t t1, t2, t3;
 			
 
 		v1.x = tri_raster.vertex[0].x; v1.y = tri_raster.vertex[0].y;
@@ -666,14 +705,14 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 		/*printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
 		printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
 		printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);*/
-		GPC_paint_triangle(scene, v1, v2, v3, color_raster);
+		GPC_paint_triangle(scene, &v1, &v2, &v3, &t1, &t2, &t3, color_raster);
 
 		//Decoment if wanted all triangles borders to be drawn
 
-		/*SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
+		SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
 		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
 		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
-		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);*/
+		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
 	}
 		
 }
@@ -836,64 +875,118 @@ void find_order(screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, screen_vec
 }
 
 
-void GPC_paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, rgb_t color)
+void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1_in, screen_vect_t* v2_in, screen_vect_t* v3_in, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color)
 {	
-	screen_vect_t v_max, v_mid, v_min;
+	screen_vect_t v;	vec2d_t t;
 	
 	SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
-
+	screen_vect_t v1 = *v1_in, v2 = *v2_in, v3 = *v3_in;
 	//finding the height order of the vertex is possible to divide the triangle at the diag in top triangle and bottom triangle
-	find_order(v1, v2, v3, &v_max, &v_mid, &v_min);	
+	if(v2.y < v3.y)
+	{
+		v = v3;
+		t = *t3;
+		v3 = v2;
+		*t3 = *t2;
+		v2 = v;
+		*t2 = t;
+	}
+
+	if(v1.y < v3.y)
+	{
+		v = v1;
+		t = *t1;
+		v1 = v3;
+		*t1 = *t3;
+		v3 = v;
+		*t3 = t;
+	}
+
+	if(v1.y < v2.y)
+	{
+		v = v2;
+		t = *t2;
+		v2 = v1;
+		*t2 = *t1;
+		v1 = v;
+		*t1 = t;
+	}
+	//find_order(v1, v2, v3, &v1, &v2, &v3);
 	
 	screen_vect_t v_line1, v_line2;
 	float k1, k2;
 	int x1, x2;
 	//if the higher and the mid vertex have the same "y" there is no bottom triangle to draw, if they are different the triangle is painted	
-	if(v_max.y != v_mid.y)
+	if(v1.y != v2.y)
 	{
 		//We get the vectors from (vmax->vmid) and (vmax->vmin)
 		// vmax->vmid
-		v_line1.x = v_mid.x - v_max.x;
-		v_line1.y = v_mid.y - v_max.y;
+		v_line1.x = v2.x - v1.x;
+		v_line1.y = v2.y - v1.y;
 		// vmax->vmid
-		v_line2.x = v_min.x - v_max.x;
-		v_line2.y = v_min.y - v_max.y;
+		v_line2.x = v3.x - v1.x;
+		v_line2.y = v3.y - v1.y;
 		
 		//Get the constant of the line formula for each line
 		k1 = (float)v_line1.x/(float)v_line1.y;
 		k2 = (float)v_line2.x/(float)v_line2.y;
 
 		//For each y we get the x of each line, starting from the y of the vmax
-		for (int y = v_max.y; y >= v_mid.y; y --)
+		for (int y = v1.y; y >= v2.y; y --)
 		{
-			x1 = k1*(y-v_max.y) + v_max.x + 0.5f;
-			x2 = k2*(y-v_max.y) + v_max.x + 0.5f;
-			SDL_RenderDrawLine(gp_renderer, x1, y, x2, y); 
+			x1 = k1*(y-v1.y) + v1.x + 0.5f;
+			x2 = k2*(y-v1.y) + v1.x + 0.5f;
+
+			//If x1 > x2 swap
+			if(x1 > x2)
+			{
+				int x = x1;
+				x1 = x2;
+				x2 = x;
+			}
+			//Draw a line from x1 to x2
+			for(int x = x1; x <= x2; x++)
+			{
+				if(SDL_RenderDrawPoint(gp_renderer, x, y) != 0) printf("Error al pintar pixel");
+				
+			}
 		}
 		
 	}
 
 	//If the lower and the mid vertex are at the same "y" we don't draw the top triangle
-	if(v_min.y != v_mid.y)
+	if(v3.y != v2.y)
 	{
 		//We get the vectors from (vmax->vmid) and (vmax->vmin)
 		// vmax->vmid
-		v_line1.x = v_min.x - v_mid.x;
-		v_line1.y = v_min.y - v_mid.y;
+		v_line1.x = v3.x - v2.x;
+		v_line1.y = v3.y - v2.y;
 		
-		v_line2.x = v_min.x - v_max.x;
-		v_line2.y = v_min.y - v_max.y;
+		v_line2.x = v3.x - v1.x;
+		v_line2.y = v3.y - v1.y;
 
 		//Get the constant of the line formula for each line
 		k1 = (float)v_line1.x/(float)v_line1.y;
 		k2 = (float)v_line2.x/(float)v_line2.y;
 
 		//For each y we get the x of each line, starting from the y of the vmax
-		for (int y = v_mid.y; y >= v_min.y; y --)
+		for (int y = v2.y; y >= v3.y; y --)
 		{
-			x1 = k1*(y-v_mid.y) + v_mid.x + 0.5f;
-			x2 = k2*(y-v_max.y) + v_max.x + 0.5f;
-			SDL_RenderDrawLine(gp_renderer, x1, y, x2, y); 
+			x1 = k1*(y-v2.y) + v2.x + 0.5f;
+			x2 = k2*(y-v1.y) + v1.x + 0.5f;
+
+			//If x1 is greater than x2 swap
+			if(x1 > x2)
+			{
+				int x = x1;
+				x1 = x2;
+				x2 = x;
+			}
+			//Draw the lines from x1 to x2
+			for(int x = x1; x <= x2; x++)
+			{
+				SDL_RenderDrawPoint(gp_renderer, x, y);
+			}
 		}
 		
 	}
@@ -1189,7 +1282,7 @@ void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr)
 }
 
 
-void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+/*void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
 {
 	vec3d_t line_vect;
 	//Get the directional vector of the line
@@ -1212,9 +1305,9 @@ void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_st
 	//Add the vector to the starting point of line to get the intersect point
 	add_vectors(line_start, &line_vect, inter_p);
 
-}
+}*/
 
-/*void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
+void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p)
 {
 	vec3d_t plane_nn;
 	normalise_vector(plane_n, &plane_nn);
@@ -1231,7 +1324,7 @@ void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_st
 	add_vectors(line_start, &line_to_intersect, &inter_point);
 	*inter_p = inter_point;
 
-}*/
+}
 
 
 float dist_point_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* point)
