@@ -13,6 +13,9 @@
 //Number of keys used from keyboard
 #define NUM_OF_KEYS 11
 
+#define TEXTURE_H 32
+#define TEXTURE_W 32
+
 
 
 //---------- COLOR STRUCT --------------------------------
@@ -33,7 +36,7 @@ typedef struct
 
 typedef struct
 {
-	float u, v;
+	float u, v, w;
 } vec2d_t; 
 
 
@@ -140,7 +143,9 @@ void render_meshes(scene_t* scene, mesh_t meshes[]);
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
 void raster_triangle(scene_t* scene, triangle_t* tri);
-void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1, screen_vect_t* v2, screen_vect_t* v3, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color);
+//void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1, screen_vect_t* v2, screen_vect_t* v3, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color);
+void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3);
+void get_color_texture(uint32_t texture[][TEXTURE_W*TEXTURE_H], float u, float v, int height, int width, rgb_t* color);
 
 //--------- TRIANGLE QUEUE FUNCTIONS -------------------------------------
 void ini_triangle_queue(triangle_queue_t* q, triangle_t tri_array[], int max);
@@ -173,7 +178,7 @@ float vector_length(vec3d_t* v);
 void normalise_vector(vec3d_t* v, vec3d_t* vn);
 void vector_cross_prod(vec3d_t* v1, vec3d_t* v2, vec3d_t* vr);
 void mul_matrices (mat4x4_t* m1, mat4x4_t* m2, mat4x4_t* mr);
-void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p);
+void vector_intersect_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* line_start, vec3d_t* line_end, vec3d_t* inter_p, float* t);
 float dist_point_plane(vec3d_t* plane_p, vec3d_t* plane_n, vec3d_t* point);
 
 
