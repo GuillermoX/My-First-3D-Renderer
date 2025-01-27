@@ -645,7 +645,7 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q)
 
 			//Get the brightness of the triangle
 			tri_proj.brightness = vector_dot_prod(&(scene->light), &normal);
-			if (tri_proj.brightness < 0) tri_proj.brightness = 0;
+			if (tri_proj.brightness < 0.05) tri_proj.brightness = 0.05;
 
 			tri_proj.vertex[0].z = tris_clip[i].vertex[0].z;
 			tri_proj.vertex[1].z = tris_clip[i].vertex[1].z;
@@ -713,11 +713,6 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 		triangle_t tri_raster;
 		next_triangle(&raster_q, &tri_raster);
 
-		//Calculate the color depending on the brightness	
-		rgb_t color_raster;
-		color_raster.r = tri_raster.color.r*tri_raster.brightness;
-		color_raster.g = tri_raster.color.g*tri_raster.brightness;
-		color_raster.b = tri_raster.color.b*tri_raster.brightness;
 
 		screen_vect_t v1, v2, v3;
 		vec2d_t t1 = tri_raster.t[0];
@@ -730,14 +725,14 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 		v2.x = tri_raster.vertex[1].x; v2.y = tri_raster.vertex[1].y;
 		v3.x = tri_raster.vertex[2].x; v3.y = tri_raster.vertex[2].y;	
 
-		paint_triangle(scene, v1, v2, v3, t1, t2, t3);
+		paint_triangle(scene, v1, v2, v3, t1, t2, t3, tri_raster.brightness);
 
 		//Decoment if wanted all triangles borders to be drawn
 
-		SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
+		/*SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
 		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
 		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
-		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
+		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);*/
 	}
 		
 }
@@ -944,7 +939,7 @@ void find_order(screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, screen_vec
 
 
 
-void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3)
+void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3, float bright)
 {
 	//Sort the vertex from smaller Y to bigger
 	if(v2.y < v1.y)
@@ -1078,7 +1073,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 				
 				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
-				SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
+				SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
 
 				SDL_RenderDrawPoint(gp_renderer, j, i);
 				t += tstep;
@@ -1086,8 +1081,6 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 		}
 
-		SDL_SetRenderDrawColor(gp_renderer, 255, 0, 0, 255);
-		SDL_RenderDrawLine(gp_renderer, ax, v2.y, bx, v2.y);
 	}
 
 	dy1 = v3.y - v2.y;
@@ -1113,7 +1106,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 	if(dy1 != 0)
 	{
 		//For each "Y" between v1 and v2
-		for(int i = v2.y+1; i <= v3.y; i++)
+		for(int i = v2.y; i <= v3.y; i++)
 		{
 			//Get the A and B screen lines "X" position on this "Y"
 			int ax = v2.x + (float)(i - v2.y)*dax_step;
@@ -1168,7 +1161,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 				rgb_t color;
 
 				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
-				SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
+				SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
 				SDL_RenderDrawPoint(gp_renderer, j, i);
 				t += tstep;
 			}

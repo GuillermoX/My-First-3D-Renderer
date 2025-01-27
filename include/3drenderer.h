@@ -144,7 +144,7 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
 void raster_triangle(scene_t* scene, triangle_t* tri);
 //void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1, screen_vect_t* v2, screen_vect_t* v3, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color);
-void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3);
+void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3, float bright);
 void get_color_texture(uint32_t texture[][TEXTURE_W*TEXTURE_H], float u, float v, int height, int width, rgb_t* color);
 
 //--------- TRIANGLE QUEUE FUNCTIONS -------------------------------------
