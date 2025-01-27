@@ -46,8 +46,8 @@ void start_scene(scene_t* scene)
 	strcpy(scene->name, "3D Renderer");
 
 	//Here you can change the scene initial parameters
-	scene->window.height = 1000;
-	scene->window.width = 1900;
+	scene->window.height = 600;
+	scene->window.width = 1000;
 
 	//Start the camera properties
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
@@ -723,16 +723,13 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 		vec2d_t t1 = tri_raster.t[0];
 		vec2d_t t2 = tri_raster.t[1];
 		vec2d_t t3 = tri_raster.t[2];
+
 			
 
 		v1.x = tri_raster.vertex[0].x; v1.y = tri_raster.vertex[0].y;
 		v2.x = tri_raster.vertex[1].x; v2.y = tri_raster.vertex[1].y;
 		v3.x = tri_raster.vertex[2].x; v3.y = tri_raster.vertex[2].y;	
 
-		/*printf("v1.x = %d   //   v1.y = %d\n", v1.x, v1.y);
-		printf("v2.x = %d   //   v2.y = %d\n", v2.x, v2.y);
-		printf("v3.x = %d   //   v3.y = %d\n\n", v3.x, v3.y);*/
-		//GPC_paint_triangle(scene, &v1, &v2, &v3, &t1, &t2, &t3, color_raster);
 		paint_triangle(scene, v1, v2, v3, t1, t2, t3);
 
 		//Decoment if wanted all triangles borders to be drawn
@@ -946,167 +943,9 @@ void find_order(screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, screen_vec
 }
 
 
-/*void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1_in, screen_vect_t* v2_in, screen_vect_t* v3_in, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color)
-{	
-	screen_vect_t v;	vec2d_t t;
-	
-	SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
-	screen_vect_t v1 = *v1_in, v2 = *v2_in, v3 = *v3_in;
-	//finding the height order of the vertex is possible to divide the triangle at the diag in top triangle and bottom triangle
-	if(v2.y < v3.y)
-	{
-		v = v3;
-		t = *t3;
-		v3 = v2;
-		*t3 = *t2;
-		v2 = v;
-		*t2 = t;
-	}
-
-	if(v1.y < v3.y)
-	{
-		v = v1;
-		t = *t1;
-		v1 = v3;
-		*t1 = *t3;
-		v3 = v;
-		*t3 = t;
-	}
-
-	if(v1.y < v2.y)
-	{
-		v = v2;
-		t = *t2;
-		v2 = v1;
-		*t2 = *t1;
-		v1 = v;
-		*t1 = t;
-	}
-	//find_order(v1, v2, v3, &v1, &v2, &v3);
-	
-	screen_vect_t v_line1, v_line2, t_line1, t_line2;
-	float k1, k2, kt1, kt2;
-	int x1, x2, au, bu;
-	printf("vertex texture: %f, %f, %f, %f, %f, %f\n", t1->u, t1->v, t2->u, t2->v, t3->u, t3->v);
-	//if the higher and the mid vertex have the same "y" there is no bottom triangle to draw, if they are different the triangle is painted	
-	if(v1.y != v2.y)
-	{
-		//We get the vectors from (vmax->vmid) and (vmax->vmin)
-		// vmax->vmid
-		v_line1.x = v2.x - v1.x;
-		v_line1.y = v2.y - v1.y;
-		// vmax->vmid
-		v_line2.x = v3.x - v1.x;
-		v_line2.y = v3.y - v1.y;
-
-		//The same for texture vertex
-		t_line1.x = t2->u - t1->u;
-		t_line1.y = t2->v - t1->v;
-
-		t_line2.x = t3->u - t1->u;
-		t_line2.y = t3->v - t1->v;
-
-		//Get the constant of the line formula for each line
-		k1 = (float)v_line1.x/(float)v_line1.y;
-		k2 = (float)v_line2.x/(float)v_line2.y;
-
-		kt1 = (float)t_line1.x/(float)t_line1.y;
-		kt2 = (float)t_line2.x/(float)t_line2.y;
-
-		float v_steps = t_line1.y/v_line1.y;
-		//For each y we get the x of each line, starting from the y of the vmax
-		int v = t1->v;
-		for (int y = v1.y; y >= v2.y; y --)
-		{
-			x1 = k1*(y-v1.y) + v1.x + 0.5f;
-			x2 = k2*(y-v1.y) + v1.x + 0.5f;
-
-			au = kt1*(v-t1->v) + t1->u;
-			bu = kt2*(v-t1->v) + t1->u;
-
-
-			//If x1 > x2 swap
-			if(x1 > x2)
-			{
-				int x = x1;
-				float u = au;
-				x1 = x2;
-				au = bu;
-				x2 = x;
-				bu = u;
-			}
-			//Draw a line from x1 to x2
-			float u_steps = (float)(bu - au)/(x2-x1);
-			int u = au;
-			for(int x = x1; x < x2; x++)
-			{
-				//if(SDL_RenderDrawPoint(gp_renderer, x, y) != 0) printf("Error al pintar pixel");
-
-				rgb_t color = {255, 255, 255};
-				get_color_texture(new_piskel_data, u, v, TEXTURE_H, TEXTURE_W, &color);
-				SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
-				SDL_RenderDrawPoint(gp_renderer, x, y);
-				
-				u += u_steps;
-				
-			}
-
-			v -= v_steps;
-		}
-		
-	}
-
-	//If the lower and the mid vertex are at the same "y" we don't draw the top triangle
-	if(v3.y != v2.y)
-	{
-		//We get the vectors from (vmax->vmid) and (vmax->vmin)
-		// vmax->vmid
-		v_line1.x = v3.x - v2.x;
-		v_line1.y = v3.y - v2.y;
-		
-		v_line2.x = v3.x - v1.x;
-		v_line2.y = v3.y - v1.y;
-
-		//Get the constant of the line formula for each line
-		k1 = (float)v_line1.x/(float)v_line1.y;
-		k2 = (float)v_line2.x/(float)v_line2.y;
-
-		//For each y we get the x of each line, starting from the y of the vmax
-		for (int y = v2.y; y >= v3.y; y --)
-		{
-			x1 = k1*(y-v2.y) + v2.x + 0.5f;
-			x2 = k2*(y-v1.y) + v1.x + 0.5f;
-
-			//If x1 is greater than x2 swap
-			if(x1 > x2)
-			{
-				int x = x1;
-				x1 = x2;
-				x2 = x;
-			}
-			//Draw the lines from x1 to x2
-			for(int x = x1; x <= x2; x++)
-			{	
-				SDL_SetRenderDrawColor(gp_renderer, 255, 255, 0, 255);
-				SDL_RenderDrawPoint(gp_renderer, x, y);
-			}
-		}
-		
-	}
-	
-	
-}*/
-
-/*void swap(void* a, void* b)
-{
-	void* aux = a;
-	a = b;
-	b = aux;
-}*/
 
 void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3)
 {
-	printf("Vertex: v1: %d %d   v2: %d %d   v3: %d %d\n", v1.x, v1.y, v2.x, v2.y, v3.x, v3.y);
 	//Sort the vertex from smaller Y to bigger
 	if(v2.y < v1.y)
 	{
@@ -1134,7 +973,9 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 		v3 = aux_v;
 		t3 = aux_t;
 	}
-	printf("Vertex Sorted: v1: %d %d   v2: %d %d   v3: %d %d\n", v1.x, v1.y, v2.x, v2.y, v3.x, v3.y);
+
+
+
 	//Difference of coordinates in A line (screen and texture)
 	int dy1 = v2.y - v1.y;
 	int dx1 = v2.x - v1.x;
@@ -1178,12 +1019,14 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 	//If the top part of the triangle is not flat
 	if(dy1 != 0)
 	{
+		int ax;
+		int bx;
 		//For each "Y" between v1 and v2
 		for(int i = v1.y; i <= v2.y; i++)
 		{
 			//Get the A and B screen lines "X" position on this "Y"
-			int ax = v1.x + (float)(i - v1.y)*dax_step;
-			int bx = v1.x + (float)(i - v1.y)*dbx_step;
+			ax = v1.x + (float)(i - v1.y)*dax_step;
+			bx = v1.x + (float)(i - v1.y)*dbx_step;
 
 			//Get the A texture line position on this "Y"
 			float tex_su = t1.u + (float)(i - v1.y)*du1_step;	//"su" -> Starting U
@@ -1192,7 +1035,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 			//Get the B texture line position on this "Y"
 			float tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
-			float tex_ev = t1.u + (float)(i - v1.y)*dv2_step;
+			float tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
 			float tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
 
 			//Line A "x" has to be smaller than line B "x" to draw from left to right
@@ -1226,25 +1069,25 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 			float tstep = 1.0f / (float)(bx - ax);
 			float t = 0.0f;		//Acumulate steps
 			
-			printf("Imprimir: %d %d -- %d %d\n", ax, i, bx, i);
-			//SDL_SetRenderDrawColor(gp_renderer, 255, 255, 0, 255);
-			//SDL_RenderDrawLine(gp_renderer, ax, i, bx, i);
 			for(int j = ax; j < bx; j++)
 			{
 				tex_u = (1.0f - t)*tex_su + t*tex_eu;
 				tex_v = (1.0f - t)*tex_sv + t*tex_ev;
 				tex_w = (1.0f - t)*tex_sw + t*tex_ew;
 				rgb_t color;
+
 				
 				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
 				SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
 
-				//SDL_SetRenderDrawColor(gp_renderer, 255, 255, 0, 255);
 				SDL_RenderDrawPoint(gp_renderer, j, i);
 				t += tstep;
 			}
 
 		}
+
+		SDL_SetRenderDrawColor(gp_renderer, 255, 0, 0, 255);
+		SDL_RenderDrawLine(gp_renderer, ax, v2.y, bx, v2.y);
 	}
 
 	dy1 = v3.y - v2.y;
@@ -1270,7 +1113,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 	if(dy1 != 0)
 	{
 		//For each "Y" between v1 and v2
-		for(int i = v2.y; i <= v3.y; i++)
+		for(int i = v2.y+1; i <= v3.y; i++)
 		{
 			//Get the A and B screen lines "X" position on this "Y"
 			int ax = v2.x + (float)(i - v2.y)*dax_step;
@@ -1283,7 +1126,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 			//Get the B texture line position on this "Y"
 			float tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
-			float tex_ev = t1.u + (float)(i - v1.y)*dv2_step;
+			float tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
 			float tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
 
 			//Line A "x" has to be smaller than line B "x" to draw from left to right
@@ -1317,9 +1160,6 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 			float tstep = 1.0f / (float)(bx - ax);
 			float t = 0.0f;		//Acumulate steps
 
-			printf("Imprimir: %d %d -- %d %d\n", ax, i, bx, i);
-			//SDL_SetRenderDrawColor(gp_renderer, 255, 255, 0, 255);
-			//SDL_RenderDrawLine(gp_renderer, ax, i, bx, i);
 			for(int j = ax; j < bx; j++)
 			{
 				tex_u = (1.0f - t)*tex_su + t*tex_eu;
@@ -1329,7 +1169,6 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
 				SDL_SetRenderDrawColor(gp_renderer, color.r, color.g, color.b, 255);
-				//SDL_SetRenderDrawColor(gp_renderer, 255, 255, 0, 255);
 				SDL_RenderDrawPoint(gp_renderer, j, i);
 				t += tstep;
 			}
@@ -1337,6 +1176,7 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 
 		}
+		printf("\n ");
 	}
 
 
@@ -1349,8 +1189,9 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 void get_color_texture(uint32_t texture[][TEXTURE_W*TEXTURE_H], float u, float v, int height, int width, rgb_t* color)
 {
-	int col = u * width;
-	int fil = v * height;
+	int col = u * width + 0.5;
+	int fil = v * height + 0.5;
+
 
 	uint32_t full_color = texture[0][fil*TEXTURE_W+col];
 	color->r = full_color & 0x000000FF;
