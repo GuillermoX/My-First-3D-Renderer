@@ -46,8 +46,8 @@ void start_scene(scene_t* scene)
 	strcpy(scene->name, "3D Renderer");
 
 	//Here you can change the scene initial parameters
-	scene->window.height = 600;
-	scene->window.width = 1000;
+	scene->window.height = 1200;
+	scene->window.width = 1900;
 
 	//Start the camera properties
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
@@ -70,7 +70,7 @@ void start_scene(scene_t* scene)
 
 
 	//Initialize meshes
-	initialize_meshes(meshes);
+	initialize_meshes(scene, meshes);
 	angle = 0;
 
 	//Initialize transformation matrices
@@ -254,9 +254,6 @@ void update_scene(scene_t* scene)
 	update_camera_look_dir(scene);
 	update_matrices(scene);
 
-	/*printf("\nAngle Y: %f", scene->camera.rot_y_angle);
-	printf("\nAngle X: %f", scene->camera.rot_x_angle);
-	printf("\nDir -- x: %f\ty: %f\tz: %f", scene->camera.look_dir.x, scene->camera.look_dir.y, scene->camera.look_dir.z);*/
 
 
 }
@@ -361,10 +358,10 @@ void render_scene(scene_t* scene)
 //		3D MANIPULATION FUNCTIONS						///
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void initialize_meshes(mesh_t meshes[])
+void initialize_meshes(scene_t* scene, mesh_t meshes[])
 {
 	//Open the .obj file
-	FILE* f = fopen("./data/object.obj", "r");
+	FILE* f = fopen(scene->model_path, "r");
 	if(f != NULL)
 	{	
 		//List to store all vertex from .obj (Fix size to make it simpler) TODO: Dinamic storage
@@ -398,34 +395,34 @@ void initialize_meshes(mesh_t meshes[])
 					if(line[1] == 't')
 					{	
 						sscanf(line, "vt %f %f", &text_v[vert_text_i].u, &text_v[vert_text_i].v);
-						printf("vertex text - u: %f  v: %f\n", text_v[vert_text_i].u ,text_v[vert_text_i].v);
+						//printf("vertex text - u: %f  v: %f\n", text_v[vert_text_i].u ,text_v[vert_text_i].v);
 						vert_text_i++;
 					}
 					else
 					{	
 						sscanf(line, "v %f %f %f", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
-						printf("vertex - x: %f  y: %f  z: %f\n", verts[vert_i].x, verts[vert_i].y, verts[vert_i].z);
+						//printf("vertex - x: %f  y: %f  z: %f\n", verts[vert_i].x, verts[vert_i].y, verts[vert_i].z);
 						verts[vert_i].w = 1.0f;
 						vert_i ++;
 					}
 					break;
 
 				case 'f': 
-					if(TEXTURE_ON)
+					if(scene->texture_mode == TEXT_UV_MODEL_ON || scene->texture_mode == TEXT_UV_MODEL_OFF)
 					{
 						sscanf(line, "f %d/%d %d/%d %d/%d", &i_v1, &i_vt1, &i_v2, &i_vt2, &i_v3, &i_vt3);
-						printf("face - vertex: %d %d %d - vertex text: %d %d %d\n", i_v1, i_v2, i_v3, i_vt1, i_vt2, i_vt3);
+						//printf("face - vertex: %d %d %d - vertex text: %d %d %d\n", i_v1, i_v2, i_v3, i_vt1, i_vt2, i_vt3);
 
 						meshes[0].tris[meshes[0].n_tris].t[0].u = text_v[i_vt1].u;
-						meshes[0].tris[meshes[0].n_tris].t[0].v = text_v[i_vt1].v;
+						meshes[0].tris[meshes[0].n_tris].t[0].v = 1-text_v[i_vt1].v;
 						meshes[0].tris[meshes[0].n_tris].t[0].w = 1.0f;
 
 						meshes[0].tris[meshes[0].n_tris].t[1].u = text_v[i_vt2].u;
-						meshes[0].tris[meshes[0].n_tris].t[1].v = text_v[i_vt2].v;
+						meshes[0].tris[meshes[0].n_tris].t[1].v = 1-text_v[i_vt2].v;
 						meshes[0].tris[meshes[0].n_tris].t[1].w = 1.0f;
 
 						meshes[0].tris[meshes[0].n_tris].t[2].u = text_v[i_vt3].u;
-						meshes[0].tris[meshes[0].n_tris].t[2].v = text_v[i_vt3].v;
+						meshes[0].tris[meshes[0].n_tris].t[2].v = 1-text_v[i_vt3].v;
 						meshes[0].tris[meshes[0].n_tris].t[2].w = 1.0f;
 
 					}
@@ -453,7 +450,7 @@ void initialize_meshes(mesh_t meshes[])
 					meshes[0].n_tris ++;
 					break;
 				
-				default: printf("Tipo no reconocido\n");
+				default: printf("Tipo no reconocido: %s", line);
 			}
 
 			n_lines_read++;
@@ -462,6 +459,12 @@ void initialize_meshes(mesh_t meshes[])
 		fclose(f);
 
 	}
+	else
+	{
+		printf("\nError: Unable to open the file");
+		scene->running = false;
+	}
+	
 
 }
 
@@ -595,22 +598,25 @@ void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q)
 			multiply_vector_matrix(&(tris_clip[i].vertex[0]), &proj_matrix, &tri_proj.vertex[0]);
 			multiply_vector_matrix(&(tris_clip[i].vertex[1]), &proj_matrix, &tri_proj.vertex[1]);
 			multiply_vector_matrix(&(tris_clip[i].vertex[2]), &proj_matrix, &tri_proj.vertex[2]);
-			
-			tri_proj.t[0] = tris_clip[i].t[0];
-			tri_proj.t[1] = tris_clip[i].t[1];
-			tri_proj.t[2] = tris_clip[i].t[2];
 
-			/*tri_proj.t[0].u /= tri_proj.vertex[0].w;
-			tri_proj.t[1].u /= tri_proj.vertex[1].w;
-			tri_proj.t[2].u /= tri_proj.vertex[2].w;
+			if(scene->texture_mode == TEXT_UV_MODEL_ON)
+			{
+				tri_proj.t[0] = tris_clip[i].t[0];
+				tri_proj.t[1] = tris_clip[i].t[1];
+				tri_proj.t[2] = tris_clip[i].t[2];
 
-			tri_proj.t[0].v /= tri_proj.vertex[0].w;
-			tri_proj.t[1].v /= tri_proj.vertex[1].w;
-			tri_proj.t[2].v /= tri_proj.vertex[2].w;
+				tri_proj.t[0].u /= tri_proj.vertex[0].w;
+				tri_proj.t[1].u /= tri_proj.vertex[1].w;
+				tri_proj.t[2].u /= tri_proj.vertex[2].w;
 
-			tri_proj.t[0].w = 1.0f / tri_proj.vertex[0].w;
-			tri_proj.t[1].w = 1.0f / tri_proj.vertex[1].w;
-			tri_proj.t[2].w = 1.0f / tri_proj.vertex[2].w;*/
+				tri_proj.t[0].v /= tri_proj.vertex[0].w;
+				tri_proj.t[1].v /= tri_proj.vertex[1].w;
+				tri_proj.t[2].v /= tri_proj.vertex[2].w;
+
+				tri_proj.t[0].w = 1.0f / tri_proj.vertex[0].w;
+				tri_proj.t[1].w = 1.0f / tri_proj.vertex[1].w;
+				tri_proj.t[2].w = 1.0f / tri_proj.vertex[2].w;
+			}	
 
 			//Scale the view (it used to be included in the vector matrix mul, but removed so it has to do this manually)
 			vector_div(&(tri_proj.vertex[0]), tri_proj.vertex[0].w, &(tri_proj.vertex[0]));
@@ -740,6 +746,7 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2)
 {
+
 	vec3d_t plane_n_n;
 	normalise_vector(plane_n, &plane_n_n);
 
@@ -814,10 +821,14 @@ int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* 
 		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[0], &(tri_out1->vertex[1]), &t);
 		tri_out1->t[1].u = t*(outside_text[0]->u - inside_text[0]->u) + inside_text[0]->u;
 		tri_out1->t[1].v = t*(outside_text[0]->v - inside_text[0]->v) + inside_text[0]->v;
+		tri_out1->t[1].w = t*(outside_text[0]->w - inside_text[0]->w) + inside_text[0]->w;
 
 		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[1], &(tri_out1->vertex[2]), &t);	
 		tri_out1->t[2].u = t*(outside_text[1]->u - inside_text[0]->u) + inside_text[0]->u;
 		tri_out1->t[2].v = t*(outside_text[1]->v - inside_text[0]->v) + inside_text[0]->v;
+		tri_out1->t[2].w = t*(outside_text[1]->w - inside_text[0]->w) + inside_text[0]->w;
+
+
 		
 		return 1;
 	}
@@ -841,6 +852,7 @@ int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* 
 		vector_intersect_plane(plane_p, &plane_n_n, inside_points[0], outside_points[0], &(tri_out1->vertex[2]), &t);
 		tri_out1->t[2].u = t*(outside_text[0]->u - inside_text[0]->u) + inside_text[0]->u;
 		tri_out1->t[2].v = t*(outside_text[0]->v - inside_text[0]->v) + inside_text[0]->v;
+		tri_out1->t[2].w = t*(outside_text[0]->w - inside_text[0]->w) + inside_text[0]->w;
 
 		//Get the second triangle output
 		tri_out2->vertex[0] = *inside_points[1];
@@ -850,6 +862,8 @@ int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* 
 		vector_intersect_plane(plane_p, &plane_n_n, inside_points[1], outside_points[0], &(tri_out2->vertex[2]), &t);
 		tri_out2->t[2].u = t*(outside_text[0]->u - inside_text[1]->u) + inside_text[1]->u;
 		tri_out2->t[2].v = t*(outside_text[0]->v - inside_text[1]->v) + inside_text[1]->v;
+		tri_out2->t[2].w = t*(outside_text[0]->w - inside_text[1]->w) + inside_text[1]->w;
+
 
 		return 2;
 	}
@@ -897,50 +911,11 @@ void next_triangle(triangle_queue_t* q, triangle_t* next_tri)
 ////////////////// 		SCREEN DRAWING FUNCTIONS 		/////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//---------------------- FILLED TRIANGLE DRAW FUNCTION --------------------------------------------------
-
-void find_order(screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, screen_vect_t* v_max, screen_vect_t* v_mid, screen_vect_t* v_min)
-{
-	
-	screen_vect_t v_tuple[3];
-
-	v_tuple[0].x = v1.x;
-	v_tuple[0].y = v1.y;
-	v_tuple[1].x = v2.x;
-	v_tuple[1].y = v2.y;
-	v_tuple[2].x = v3.x;
-	v_tuple[2].y = v3.y;
-
-	for (int i = 0; i < 2; i++)
-	{
-		int min = i;
-		for (int j = i+1; j < 3; j++)
-		{
-			if(v_tuple[j].y < v_tuple[min].y) min = j;	
-		}
-		screen_vect_t v;
-		v.x = v_tuple[i].x;
-		v.y = v_tuple[i].y;
-		v_tuple[i].x = v_tuple[min].x;
-		v_tuple[i].y = v_tuple[min].y;
-		v_tuple[min].x = v.x;
-		v_tuple[min].y = v.y;
-
-	}
-
-	v_min->x = v_tuple[0].x;
-	v_min->y = v_tuple[0].y;
-	v_mid->x = v_tuple[1].x;
-	v_mid->y = v_tuple[1].y;
-	v_max->x = v_tuple[2].x;
-	v_max->y = v_tuple[2].y;
-
-}
-
 
 
 void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3, float bright)
 {
+	bool text_on = scene->texture_mode == TEXT_UV_MODEL_ON;
 	//Sort the vertex from smaller Y to bigger
 	if(v2.y < v1.y)
 	{
@@ -971,19 +946,27 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 
 
+
 	//Difference of coordinates in A line (screen and texture)
 	int dy1 = v2.y - v1.y;
 	int dx1 = v2.x - v1.x;
-	float du1 = t2.u - t1.u;
-	float dv1 = t2.v - t1.v;
-	float dw1 = t2.w - t1.w;
-
+	float du1, dv1, dw1;
+	if(text_on)
+	{
+		du1 = t2.u - t1.u;
+		dv1 = t2.v - t1.v;
+		dw1 = t2.w - t1.w;
+	}
 	//Difference of coords in B lines (screen and texture)
 	int dy2 = v3.y - v1.y;
 	int dx2 = v3.x - v1.x;
-	float du2 = t3.u - t1.u;
-	float dv2 = t3.v - t1.v;
-	float dw2 = t3.w - t1.w;
+	float du2, dv2, dw2;
+	if(text_on)
+	{
+		du2 = t3.u - t1.u;
+		dv2 = t3.v - t1.v;
+		dw2 = t3.w - t1.w;
+	}
 
 	//Step values of screen lines A and B (dx/dy)
 	float dax_step = 0, dbx_step = 0;
@@ -999,16 +982,22 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 	if(dy1 != 0)
 	{	
 		dax_step = dx1 / (float)abs(dy1);
-		du1_step = du1 / (float)abs(dy1);
-		dv1_step = dv1 / (float)abs(dy1);
-		dw1_step = dw1 / (float)abs(dy1);
+		if(text_on)
+		{	
+			du1_step = du1 / (float)abs(dy1);
+			dv1_step = dv1 / (float)abs(dy1);
+			dw1_step = dw1 / (float)abs(dy1);
+		}
 	}
 	if(dy2 != 0)
 	{
 		dbx_step = dx2 / (float)abs(dy2);
-		du2_step = du2 / (float)abs(dy2);
-		dv2_step = dv2 / (float)abs(dy2);
-		dw2_step = dw2 / (float)abs(dy2);
+		if(text_on)
+		{
+			du2_step = du2 / (float)abs(dy2);
+			dv2_step = dv2 / (float)abs(dy2);
+			dw2_step = dw2 / (float)abs(dy2);
+		}
 	}
 
 	//If the top part of the triangle is not flat
@@ -1023,15 +1012,19 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 			ax = v1.x + (float)(i - v1.y)*dax_step;
 			bx = v1.x + (float)(i - v1.y)*dbx_step;
 
-			//Get the A texture line position on this "Y"
-			float tex_su = t1.u + (float)(i - v1.y)*du1_step;	//"su" -> Starting U
-			float tex_sv = t1.v + (float)(i - v1.y)*dv1_step;
-			float tex_sw = t1.w + (float)(i - v1.y)*dw1_step;
+			float tex_su, tex_sv, tex_sw, tex_eu, tex_ev, tex_ew;
+			if(text_on)
+			{	
+				//Get the A texture line position on this "Y"
+				tex_su = t1.u + (float)(i - v1.y)*du1_step;	//"su" -> Starting U
+				tex_sv = t1.v + (float)(i - v1.y)*dv1_step;
+				tex_sw = t1.w + (float)(i - v1.y)*dw1_step;
 
-			//Get the B texture line position on this "Y"
-			float tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
-			float tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
-			float tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
+				//Get the B texture line position on this "Y"
+				tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
+				tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
+				tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
+			}
 
 			//Line A "x" has to be smaller than line B "x" to draw from left to right
 			if(ax > bx)
@@ -1042,41 +1035,54 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 				bx = ax;
 				ax = aux_i;
 				//Swap the starting and ending texture U and V
-				aux_f = tex_su;
-				tex_su = tex_eu;
-				tex_eu = aux_f;
+				if(text_on)
+				{
+					aux_f = tex_su;
+					tex_su = tex_eu;
+					tex_eu = aux_f;
 
-				aux_f = tex_sv;
-				tex_sv = tex_ev;
-				tex_ev = aux_f;
+					aux_f = tex_sv;
+					tex_sv = tex_ev;
+					tex_ev = aux_f;
 
-				aux_f = tex_sw;
-				tex_sw = tex_ew;
-				tex_ew = aux_f;
+					aux_f = tex_sw;
+					tex_sw = tex_ew;
+					tex_ew = aux_f;
+				}
 			}
 
-			//This is the final point of the texture to get the color from
-			float tex_u = tex_su;
-			float tex_v = tex_sv;
-			float tex_w = tex_sw;
 
-			//Get the range of a step between the "X"s from lines A and B 
-			float tstep = 1.0f / (float)(bx - ax);
-			float t = 0.0f;		//Acumulate steps
-			
-			for(int j = ax; j < bx; j++)
+			if(text_on)
 			{
-				tex_u = (1.0f - t)*tex_su + t*tex_eu;
-				tex_v = (1.0f - t)*tex_sv + t*tex_ev;
-				tex_w = (1.0f - t)*tex_sw + t*tex_ew;
-				rgb_t color;
+				//This is the final point of the texture to get the color from
+				float tex_u = tex_su;
+				float tex_v = tex_sv;
+				float tex_w = tex_sw;
 
-				
-				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
-				SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
+				//Get the range of a step between the "X"s from lines A and B 
+				float tstep = 1.0f / (float)(bx - ax);
+				float t = 0.0f;		//Acumulate steps
 
-				SDL_RenderDrawPoint(gp_renderer, j, i);
-				t += tstep;
+
+				for(int j = ax; j < bx; j++)
+				{
+					tex_u = (1.0f - t)*tex_su + t*tex_eu;
+					tex_v = (1.0f - t)*tex_sv + t*tex_ev;
+					tex_w = (1.0f - t)*tex_sw + t*tex_ew;
+					rgb_t color;
+
+
+					get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+					SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
+
+					SDL_RenderDrawPoint(gp_renderer, j, i);
+					t += tstep;
+				}
+			}
+			else
+			{	
+				SDL_SetRenderDrawColor(gp_renderer, 140*bright, 140*bright, 140*bright, 255);
+				SDL_RenderDrawLine(gp_renderer, ax, i, bx, i);
 			}
 
 		}
@@ -1085,18 +1091,26 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 
 	dy1 = v3.y - v2.y;
 	dx1 = v3.x - v2.x;
-	du1 = t3.u - t2.u;
-	dv1 = t3.v - t2.v;
-	dw1 = t3.w - t2.w;
 
-	du1_step = 0;	dv1_step = 0;
+	if(text_on)
+	{
+		du1 = t3.u - t2.u;
+		dv1 = t3.v - t2.v;
+		dw1 = t3.w - t2.w;
+
+		du1_step = 0;	dv1_step = 0;
+	}
+
 	//Calculate the values of steps preventing a division by 0
 	if(dy1 != 0)
 	{	
 		dax_step = dx1 / (float)abs(dy1);
-		du1_step = du1 / (float)abs(dy1);
-		dv1_step = dv1 / (float)abs(dy1);
-		dw1_step = dw1 / (float)abs(dy1);
+		if(text_on)
+		{	
+			du1_step = du1 / (float)abs(dy1);
+			dv1_step = dv1 / (float)abs(dy1);
+			dw1_step = dw1 / (float)abs(dy1);
+		}
 	}
 	if(dy2 != 0)
 	{
@@ -1112,15 +1126,19 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 			int ax = v2.x + (float)(i - v2.y)*dax_step;
 			int bx = v1.x + (float)(i - v1.y)*dbx_step;
 
-			//Get the A texture line position on this "Y"
-			float tex_su = t2.u + (float)(i - v2.y)*du1_step;	//"su" -> Starting U
-			float tex_sv = t2.v + (float)(i - v2.y)*dv1_step;
-			float tex_sw = t2.w + (float)(i - v2.y)*dw1_step;
+			float tex_su, tex_sv, tex_sw, tex_eu, tex_ev, tex_ew;
+			if(text_on)
+			{	
+				//Get the A texture line position on this "Y"
+				tex_su = t2.u + (float)(i - v2.y)*du1_step;	//"su" -> Starting U
+				tex_sv = t2.v + (float)(i - v2.y)*dv1_step;
+				tex_sw = t2.w + (float)(i - v2.y)*dw1_step;
 
-			//Get the B texture line position on this "Y"
-			float tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
-			float tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
-			float tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
+				//Get the B texture line position on this "Y"
+				tex_eu = t1.u + (float)(i - v1.y)*du2_step;	//"eu" -> Ending U
+				tex_ev = t1.v + (float)(i - v1.y)*dv2_step;
+				tex_ew = t1.w + (float)(i - v1.y)*dw2_step;
+			}
 
 			//Line A "x" has to be smaller than line B "x" to draw from left to right
 			if(ax > bx)
@@ -1130,18 +1148,22 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 				aux_i = bx;
 				bx = ax;
 				ax = aux_i;
-				//Swap the starting and ending texture U and V
-				aux_f = tex_su;
-				tex_su = tex_eu;
-				tex_eu = aux_f;
 
-				aux_f = tex_sv;
-				tex_sv = tex_ev;
-				tex_ev = aux_f;
+				if(text_on)
+				{	
+					//Swap the starting and ending texture U and V
+					aux_f = tex_su;
+					tex_su = tex_eu;
+					tex_eu = aux_f;
 
-				aux_f = tex_sw;
-				tex_sw = tex_ew;
-				tex_ew = aux_f;
+					aux_f = tex_sv;
+					tex_sv = tex_ev;
+					tex_ev = aux_f;
+
+					aux_f = tex_sw;
+					tex_sw = tex_ew;
+					tex_ew = aux_f;
+				}
 			}
 
 			//This is the final point of the texture to get the color from
@@ -1153,23 +1175,35 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 			float tstep = 1.0f / (float)(bx - ax);
 			float t = 0.0f;		//Acumulate steps
 
-			for(int j = ax; j < bx; j++)
-			{
-				tex_u = (1.0f - t)*tex_su + t*tex_eu;
-				tex_v = (1.0f - t)*tex_sv + t*tex_ev;
-				tex_w = (1.0f - t)*tex_sw + t*tex_ew;
-				rgb_t color;
+			if(text_on)
+			{	
+				for(int j = ax; j < bx; j++)
+				{
+					tex_u = (1.0f - t)*tex_su + t*tex_eu;
+					tex_v = (1.0f - t)*tex_sv + t*tex_ev;
+					tex_w = (1.0f - t)*tex_sw + t*tex_ew;
+					rgb_t color;
 
-				get_color_texture(new_piskel_data, tex_u, tex_v, TEXTURE_H, TEXTURE_W, &color);
-				SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
-				SDL_RenderDrawPoint(gp_renderer, j, i);
-				t += tstep;
+					/*if(tex_u/tex_w > 1) printf("\n U/W ABAJO > 1 --- W: %f", tex_w);
+					if(tex_v/tex_w > 1) printf("\n V/W ABAJO > 1 --- W: %f", tex_w);
+					else printf("\n --- W: %f", tex_w);*/
+
+					get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+					SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
+					SDL_RenderDrawPoint(gp_renderer, j, i);
+					t += tstep;
+				}
+			}
+			else
+			{	
+				SDL_SetRenderDrawColor(gp_renderer, 140*bright, 140*bright, 140*bright, 255);
+				SDL_RenderDrawLine(gp_renderer, ax, i, bx, i);
 			}
 
 
 
+
 		}
-		printf("\n ");
 	}
 
 

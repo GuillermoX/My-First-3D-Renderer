@@ -13,8 +13,12 @@
 //Number of keys used from keyboard
 #define NUM_OF_KEYS 11
 
-#define TEXTURE_H 32
-#define TEXTURE_W 32
+#define TEXTURE_H 63
+#define TEXTURE_W 200
+
+#define TEXTURE_OFF 0
+#define TEXT_UV_MODEL_ON 1
+#define TEXT_UV_MODEL_OFF 2
 
 
 
@@ -119,6 +123,9 @@ typedef struct
 	window_prop_t window;
 	camera_t camera;
 	vec3d_t light;
+	int texture_mode;
+	char model_path[40];
+	char text_path[30];
 } scene_t;
 
 
@@ -138,7 +145,7 @@ void stop_scene();
 
 //--------- 3D RENDERER FUNCTIONS ----------------------------
 
-void initialize_meshes(mesh_t meshes[]);
+void initialize_meshes(scene_t* scene, mesh_t meshes[]);
 void render_meshes(scene_t* scene, mesh_t meshes[]);
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
