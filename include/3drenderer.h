@@ -11,7 +11,7 @@
 
 //------- GPSCENECREATOR DEFINES ------------------
 //Number of keys used from keyboard
-#define NUM_OF_KEYS 11
+#define NUM_OF_KEYS 13
 
 #define TEXTURE_H 63
 #define TEXTURE_W 200
@@ -19,6 +19,9 @@
 #define TEXTURE_OFF 0
 #define TEXT_UV_MODEL_ON 1
 #define TEXT_UV_MODEL_OFF 2
+
+#define WINDOW_H 1000
+#define WINDOW_W 1200
 
 
 
@@ -94,7 +97,9 @@ typedef enum
 	KEY_left,
 	KEY_right,
 	KEY_up,
-	KEY_down
+	KEY_down,
+	KEY_t,
+	KEY_b
 } keys_enum;
 
 
@@ -124,6 +129,7 @@ typedef struct
 	camera_t camera;
 	vec3d_t light;
 	int texture_mode;
+	bool borders_on;
 	char model_path[40];
 	char text_path[30];
 } scene_t;

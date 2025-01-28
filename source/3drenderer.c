@@ -46,8 +46,10 @@ void start_scene(scene_t* scene)
 	strcpy(scene->name, "3D Renderer");
 
 	//Here you can change the scene initial parameters
-	scene->window.height = 1200;
-	scene->window.width = 1900;
+	scene->window.height = WINDOW_H;
+	scene->window.width = WINDOW_W;
+
+	scene->borders_on = false;
 
 	//Start the camera properties
 	scene -> camera.pos.x = 0;	scene->camera.pos.y = 0;	scene->camera.pos.z = 0;
@@ -181,6 +183,12 @@ void process_input(scene_t* scene)
 				case SDLK_DOWN:
 					gp_keys[KEY_down] = true;
 					break;
+				case SDLK_t:
+					gp_keys[KEY_t] = true;
+					break;
+				case SDLK_b:
+					gp_keys[KEY_b] = true;
+					break;
 			}
 			break;
 		case SDL_KEYUP:
@@ -215,8 +223,13 @@ void process_input(scene_t* scene)
 					break;
 				case SDLK_DOWN:
 					gp_keys[KEY_down] = false;
+					break;	
+				case SDLK_t:
+					gp_keys[KEY_t] = false;
+					break;	
+				case SDLK_b:
+					gp_keys[KEY_b] = false;
 					break;
-				
 				
 			}
 			break;	
@@ -248,6 +261,11 @@ void update_scene(scene_t* scene)
 	if(gp_keys[KEY_right]) rotate_camera(scene, 0, -1);
 	if(gp_keys[KEY_up]) rotate_camera(scene, -1, 0);
 	if(gp_keys[KEY_down]) rotate_camera(scene, 1, 0);
+	if(gp_keys[KEY_t])
+	{	//If mode 1 -> mode 2 	/ 	if mode 2 -> mode 1
+		scene->texture_mode = scene->texture_mode ^ 0x3;
+	}
+	if(gp_keys[KEY_b]) scene->borders_on = !scene->borders_on;
 	//Increase the rotation angle
 	//angle += 30*delta_time;
 
@@ -403,6 +421,7 @@ void initialize_meshes(scene_t* scene, mesh_t meshes[])
 						sscanf(line, "v %f %f %f", &verts[vert_i].x, &verts[vert_i].y, &verts[vert_i].z);
 						//printf("vertex - x: %f  y: %f  z: %f\n", verts[vert_i].x, verts[vert_i].y, verts[vert_i].z);
 						verts[vert_i].w = 1.0f;
+						verts[vert_i].x *= -1;		//Invert the X coord because some 3d editors export with inverted X (Blender in my case)
 						vert_i ++;
 					}
 					break;
@@ -417,12 +436,12 @@ void initialize_meshes(scene_t* scene, mesh_t meshes[])
 						meshes[0].tris[meshes[0].n_tris].t[0].v = 1-text_v[i_vt1].v;
 						meshes[0].tris[meshes[0].n_tris].t[0].w = 1.0f;
 
-						meshes[0].tris[meshes[0].n_tris].t[1].u = text_v[i_vt2].u;
-						meshes[0].tris[meshes[0].n_tris].t[1].v = 1-text_v[i_vt2].v;
+						meshes[0].tris[meshes[0].n_tris].t[1].u = text_v[i_vt3].u;
+						meshes[0].tris[meshes[0].n_tris].t[1].v = 1-text_v[i_vt3].v;
 						meshes[0].tris[meshes[0].n_tris].t[1].w = 1.0f;
 
-						meshes[0].tris[meshes[0].n_tris].t[2].u = text_v[i_vt3].u;
-						meshes[0].tris[meshes[0].n_tris].t[2].v = 1-text_v[i_vt3].v;
+						meshes[0].tris[meshes[0].n_tris].t[2].u = text_v[i_vt2].u;
+						meshes[0].tris[meshes[0].n_tris].t[2].v = 1-text_v[i_vt2].v;
 						meshes[0].tris[meshes[0].n_tris].t[2].w = 1.0f;
 
 					}
@@ -437,15 +456,15 @@ void initialize_meshes(scene_t* scene, mesh_t meshes[])
 					meshes[0].tris[meshes[0].n_tris].vertex[0].z = verts[i_v1].z;
 					meshes[0].tris[meshes[0].n_tris].vertex[0].w = verts[i_v1].w;
 
-					meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v2].x;
-					meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v2].y;
-					meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v2].z;
-					meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v2].w;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].x = verts[i_v3].x;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].y = verts[i_v3].y;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].z = verts[i_v3].z;
+					meshes[0].tris[meshes[0].n_tris].vertex[1].w = verts[i_v3].w;
 
-					meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v3].x;
-					meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v3].y;
-					meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v3].z;
-					meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v3].w;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].x = verts[i_v2].x;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].y = verts[i_v2].y;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].z = verts[i_v2].z;
+					meshes[0].tris[meshes[0].n_tris].vertex[2].w = verts[i_v2].w;
 
 					meshes[0].n_tris ++;
 					break;
@@ -735,10 +754,13 @@ void raster_triangle(scene_t* scene, triangle_t* tri)
 
 		//Decoment if wanted all triangles borders to be drawn
 
-		/*SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
-		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
-		SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
-		SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);*/
+		if(scene->borders_on)
+		{
+			SDL_SetRenderDrawColor(gp_renderer, 255, 255, 255, 255);
+			SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v2.x, v2.y);
+			SDL_RenderDrawLine(gp_renderer, v1.x, v1.y, v3.x, v3.y);
+			SDL_RenderDrawLine(gp_renderer, v2.x, v2.y, v3.x, v3.y);
+		}
 	}
 		
 }

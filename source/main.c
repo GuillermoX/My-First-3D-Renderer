@@ -12,6 +12,8 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
+		bool start = true;
+
 		char path[30];
 		strcpy(path, MODELS_PATH);
 		strcat(path, argv[1]);
@@ -30,14 +32,23 @@ int main(int argc, char *argv[])
 			strcpy(scene.text_path, path);
 			printf("\tTexture: %s", scene.text_path);
 		}
-		start_scene(&scene);
-		while(scene.running)
+		else
 		{
-			process_input(&scene);
-			update_scene(&scene);
-			render_scene(&scene);
+			start = false;
+			printf("\nInvalid arguments");
 		}
-		stop_scene();
+
+		if(start)
+		{
+			start_scene(&scene);
+			while(scene.running)
+			{
+				process_input(&scene);
+				update_scene(&scene);
+				render_scene(&scene);
+			}
+			stop_scene();
+		}
 	}
 
 	return 0;
