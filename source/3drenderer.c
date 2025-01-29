@@ -1,5 +1,5 @@
 #include "../include/3drenderer.h"
-#include "./texture2.c"
+#include "./texture.c"
 
 //--------- OBJECT DEFINES ---------------------------------------------------
 #define N_MESHES 1
