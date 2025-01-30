@@ -64,24 +64,24 @@ the object.
 ## How to compile and run with makefile:
 The project includes a makefile whith the following rules:
 
-'''
+``` 
 make 
-'''
+``` 
 Compile the program.
 
-'''
+``` 
 make run
-'''
+``` 
 Run the default model with its texture.
 
-'''
+``` 
 make debug
-'''
+``` 
 Start the gdb debugger with the main.c file.
 
-'''
+``` 
 make clean
-'''
+``` 
 Delete all binary files.
 
 
@@ -104,7 +104,7 @@ You will see that the model is rendered without texture. Press the "t" key to en
 In the future you will have to specify the texture file after "-t" flag when executing.
 
 
-##Controls:
+## Controls:
 These are the keys assigned to control the camera and the options of the rendering:
 
 | Action                  | Key           |
