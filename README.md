@@ -3,7 +3,7 @@
 This is my first 3D renderer project. I'm aware this project contains an important amount of
 bad coding practices and bugs. My intention is not to make this the best 3D renderer.
 
-I'm a noob in this field, so I may use wrong technical words along this file.
+I'm a noob in this field, so although I have done quite research, I can't be sure that I am not mistaken in some technical concept. 
 
 ---
 
