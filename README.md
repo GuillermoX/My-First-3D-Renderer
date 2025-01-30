@@ -65,25 +65,26 @@ the object.
 ## How to compile and run with makefile:
 The project includes a makefile whith the following rules:
 
+
+Compile the program:
 ``` 
 make 
 ``` 
-Compile the program.
 
+Run the default model with its texture:
 ``` 
 make run
 ``` 
-Run the default model with its texture.
 
+Start the gdb debugger with the main.c file:
 ``` 
 make debug
 ``` 
-Start the gdb debugger with the main.c file.
 
+Delete all binary files:
 ``` 
 make clean
 ``` 
-Delete all binary files.
 
 
 ## Binary parameters and flags:
