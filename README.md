@@ -90,18 +90,18 @@ The executable file of the project is stored in the bin directory. Is called "3d
 
 To render a specific model is necessary to add the .obj file into the data directory and then add the following parameter
 when executing:
-'''
+```
 ./3drenderer objectfilename
-'''
+```
 This is in case the 3D model doesn't contain texture information. In that case you have to convert the texture image into an 
 array in a C file. Later it will be explained how to do that.
 
 Then you have to substitute the current texture.c file in source directory with the new texture.
 
 Finally you need to add the following parameters when executing:
-'''
+```
 ./3drenderer objecfilename -t
-'''
+```
 You will see that the model is rendered without texture. Press the "t" key to enable the texture.
 In the future you will have to specify the texture file after "-t" flag when executing.
 
@@ -128,6 +128,7 @@ These are the keys assigned to control the camera and the options of the renderi
 ## How to get a C file with an image in an array:
 To do this I've used the online tool named Piskel. This tool is designed to make pixel art sprites but it lets you upload an image
 and then export it as a C file. I don't recommend using textures with more than 100x100px size.
+
 After exporting as C file, as mentioned previously, you have to substitute the texture.c file with the new texture file. The name must be "texture.c"
 The array in the C file must be named "texture" and you have to remove the const value of the array.
 
