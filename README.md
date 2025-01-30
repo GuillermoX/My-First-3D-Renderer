@@ -122,12 +122,12 @@ These are the keys assigned to control the camera and the options of the renderi
 | Look Up                 | Up Arrow      |
 | Look Down               | Down Arroy    |
 | Look Right              | Right Arrow   |
-| Look Do                 | Left Arrow    |
+| Look Left               | Left Arrow    |
 | Enable/Disable texture  | T             |
 | Enable/Disable borders  | B             |
 
 
-## How to get a C file with an image in an array:
+## How to convert a regular image file to a C array:
 To do this I've used the online tool named Piskel. This tool is designed to make pixel art sprites but it lets you upload an image
 and then export it as a C file. I don't recommend using textures with more than 100x100px size.
 
