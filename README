@@ -57,6 +57,9 @@ the object.
 - Language and version: C99
 - Operating System: Fedora Linux 
 - Compiler: gcc 14.1.1
+- I haven't tried to compile and run this project in another OS different from Linux, so I can't assure that it will work.
+
+
 
 ##How to compile and run with makefile:
 The project includes a makefile whith the following rules:
@@ -120,8 +123,12 @@ These are the keys assigned to control the camera and the options of the renderi
 | Enable/Disable borders  | B             |
 
 
+##How to get a C file with an image in an array:
+To do this I've used the online tool named Piskel. This tool is designed to make pixel art sprites but it lets you upload an image
+and then export it as a C file. I don't recommend using textures with more than 100x100px size.
+After exporting as C file, as mentioned previously, you have to substitute the texture.c file with the new texture file. The name must be "texture.c"
+The array in the C file must be named "texture" and you have to remove the const value of the array.
 
-##Additional remarks:
-I haven't tried to compile and run this project in another OS different from Linux, so I can't assure that it will work.
+
 
 
