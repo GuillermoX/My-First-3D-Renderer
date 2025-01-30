@@ -12,6 +12,7 @@ I've always been impressed by how computers are capable of representing a 3D obj
 I knew there was a lot of coding and math behind it, but since I hadn't the required knowledge, I had never tried to understand it.
 Thankfully, last year I started a degree in computer engineering, so I acquired enough math and coding knowledge
 to try understanding this field of computers.
+
 I started watching youtube videos about the topic and I came across a youtube channel named "javidx9". This guy
 has a series of 4 videos whhere he teaches the concepts to make a 3D engine from scratch. That was exactly what I was looking for.
 Thanks to him I've been able to code this simple 3D renderer.
