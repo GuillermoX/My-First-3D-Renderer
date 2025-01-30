@@ -94,8 +94,10 @@ when executing:
 ./3drenderer objectfilename
 '''
 This is in case the 3D model doesn't contain texture information. In that case you have to convert the texture image into an 
-array in a C file. Later I'll explain how to do that. Later it will be explained how to do that.
+array in a C file. Later it will be explained how to do that.
+
 Then you have to substitute the current texture.c file in source directory with the new texture.
+
 Finally you need to add the following parameters when executing:
 '''
 ./3drenderer objecfilename -t
