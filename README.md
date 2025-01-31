@@ -24,6 +24,10 @@ as the objective was understanding what is the work that GPU and graphic librari
 It has the ability to interpret an .obj file and render it onto the screen. It can also add a texture to
 the object.
 
+## Preview:
+Here you have the youtube video preview of the project.
+[![Watch the video](https://img.youtube.com/vi/9w5glzeg1-E/maxresdefault.jpg)](https://youtu.be/9w5glzeg1-E )
+
 
 ## General features:
 - Load from an .obj file and represent in space a 3D model.
