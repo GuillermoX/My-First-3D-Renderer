@@ -1,5 +1,5 @@
 #include "../include/3drenderer.h"
-#include "./texture.c"
+//#include "./texture.c"
 
 //--------- OBJECT DEFINES ---------------------------------------------------
 #define N_MESHES 1
@@ -74,6 +74,17 @@ void start_scene(scene_t* scene)
 	//Initialize meshes
 	initialize_meshes(scene, meshes);
 	angle = 0;
+
+	//Initialize texture data
+	int texture_error;
+	if(scene->texture_mode == TEXT_UV_MODEL_ON)
+	{
+		texture_error = initialize_texture(scene);	
+		if(texture_error == -1)
+		{
+			printf("\nError while loading texture");
+		}	
+	}
 
 	//Initialize transformation matrices
 	initialize_matrices(scene);
@@ -261,7 +272,7 @@ void update_scene(scene_t* scene)
 	if(gp_keys[KEY_right]) rotate_camera(scene, 0, -1);
 	if(gp_keys[KEY_up]) rotate_camera(scene, -1, 0);
 	if(gp_keys[KEY_down]) rotate_camera(scene, 1, 0);
-	if(gp_keys[KEY_t])
+	if(gp_keys[KEY_t] && scene->texture.text_set)
 	{	//If mode 1 -> mode 2 	/ 	if mode 2 -> mode 1
 		scene->texture_mode = scene->texture_mode ^ 0x3;
 	}
@@ -486,6 +497,81 @@ void initialize_meshes(scene_t* scene, mesh_t meshes[])
 	
 
 }
+
+
+int initialize_texture(scene_t* scene)
+{
+	FILE* fp = fopen(scene->text_path, "rb");
+
+	if(!fp)
+	{
+		perror("Unable to open PNG file");
+		scene->running = false;
+		return -1;
+	}
+
+	png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if(!png)
+	{
+		fclose(fp);
+		scene->running = false;
+		return -1;
+	}
+
+	png_infop info = png_create_info_struct(png);
+	if(!info)
+	{
+		png_destroy_read_struct(&png, NULL, NULL);
+		fclose(fp);
+		scene->running = false;
+		return -1;
+	}
+
+	if(setjmp(png_jmpbuf(png)))
+	{
+		png_destroy_read_struct(&png, &info, NULL);
+		fclose(fp);
+		scene->running = false;
+		return -1;
+	}
+
+	png_init_io(png, fp);
+	png_read_info(png, info);
+
+	scene->texture.height = png_get_image_height(png, info);
+	scene->texture.width = png_get_image_width(png, info);
+	png_byte color_type = png_get_color_type(png, info);
+	png_byte bit_depth = png_get_bit_depth(png, info);
+
+
+
+	if (color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_palette_to_rgb(png);
+    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+        png_set_expand_gray_1_2_4_to_8(png);
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+        png_set_tRNS_to_alpha(png);
+    if (bit_depth == 16)
+        png_set_strip_16(png);
+    png_set_packing(png);
+
+    png_read_update_info(png, info);
+
+
+
+	scene->texture.row_pointers = (png_bytep*)malloc(sizeof(png_bytep)*scene->texture.height);
+	for(int i = 0; i < scene->texture.height; i++)
+		scene->texture.row_pointers[i] = (png_byte*)malloc(png_get_rowbytes(png, info));
+
+	png_read_image(png, scene->texture.row_pointers);
+	fclose(fp);
+
+	printf("\nTexture initialized");
+
+	return 0;
+}
+
+
 
 int compare_depth_tris(const void* tri1_p, const void* tri2_p)
 {
@@ -1094,7 +1180,8 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 					rgb_t color;
 
 
-					get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+					//get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+					get_color_texture_png(scene, tex_u / tex_w, tex_v / tex_w, &color);
 					SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
 
 					SDL_RenderDrawPoint(gp_renderer, j, i);
@@ -1210,7 +1297,9 @@ void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_v
 					if(tex_v/tex_w > 1) printf("\n V/W ABAJO > 1 --- W: %f", tex_w);
 					else printf("\n --- W: %f", tex_w);*/
 
-					get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+					//get_color_texture(texture, tex_u / tex_w, tex_v / tex_w, TEXTURE_H, TEXTURE_W, &color);
+
+					get_color_texture_png(scene, tex_u / tex_w, tex_v / tex_w, &color);
 					SDL_SetRenderDrawColor(gp_renderer, color.r*bright, color.g*bright, color.b*bright, 255);
 					SDL_RenderDrawPoint(gp_renderer, j, i);
 					t += tstep;
@@ -1247,6 +1336,24 @@ void get_color_texture(uint32_t texture[][TEXTURE_W*TEXTURE_H], float u, float v
 	color->g = (full_color & 0x0000FF00) >> 8;
 	color->b = (full_color & 0x00FF0000) >> 16;
 
+}
+
+void get_color_texture_png(scene_t* scene, float u, float v, rgb_t* color)
+{
+	int x = u*scene->texture.width;
+	int y = v*scene->texture.height;
+
+	if(x < 0 || x >= scene->texture.width || y < 0 || y >= scene->texture.height)
+	{
+		*color = (rgb_t){255, 0, 212};
+	}
+	else
+	{
+		png_bytep pixel = scene->texture.row_pointers[y] + x*4;
+		color->r = pixel[0];
+		color->g = pixel[1];
+		color->b = pixel[2];
+	}
 }
 
 

@@ -48,16 +48,14 @@ Here you have the youtube video preview of the project.
   This is due to the simple depth calculus done to sort the triangles. Each triangle has a depth assigned
   based on the arithmetic mean of the three vertices depth which is very imprecise.
 - Only vertices, faces and textures UV information from .obj is interpreted.
-- For the moment, textures have to be codified in an array of 4 bytes per position. Each position represents
-  a color codified as: Alpha, Blue, Green, Red. Each color channel and alpha is 1 byte. Alpha channel is depreciated.
-  I want to add the possibility to use a PNG texture file.
 - To change the texture, is necessary to manually change the texture.c file from source directory. In future I'll add
   the possibility to specify the texture file without manipulating the code.
 - FPS drop when getting too close to the model with texture. This is because of the simple and inefficient method of using a for loop to
   raster each pixel of the triangles.
 
 ## Dependencies:
-- The program uses the SDL2 library to create and paint pixels on the screen. It's also used to catch the keys to control de camera.
+- SDL2 library: Create and paint pixels on the screen. It's also used to catch the keys to control de camera.
+- libpng: Read PNG texture file.
 
 ## Development enviroment:
 - Language and version: C99
@@ -92,7 +90,7 @@ make clean
 ``` 
 
 
-## Binary parameters and flags:
+## Bynary run flags:
 The executable file of the project is stored in the bin directory. Is called "3drenderer".
 
 To render a specific model is necessary to add the .obj file into the data directory and then add the following parameter
@@ -100,18 +98,20 @@ when executing:
 ```
 ./3drenderer objectfilename
 ```
-This is in case the 3D model doesn't contain texture information. In that case you have to convert the texture image into an 
-array in a C file. Later it will be explained how to do that.
+This is in case the 3D model doesn't contain texture information.
 
-Then you have to substitute the current texture.c file in source directory with the new texture.
+If the model has texture info, you can either render the model with texture or without.
 
-Finally you need to add the following parameters when executing:
+In both cases you need to add the texture flag:
 ```
 ./3drenderer objecfilename -t
 ```
-You will see that the model is rendered without texture. Press the "t" key to enable the texture.
-In the future you will have to specify the texture file after "-t" flag when executing.
-
+In that case the model will be rendered without texture applied.
+If you want to add the texture, you have to specify the texture file name as below:
+```
+./3drenderer objecfilename -t texturefilename
+```
+The texture file must be in ```./data/textures/```.
 
 ## Controls:
 These are the keys assigned to control the camera and the options of the rendering:
@@ -130,14 +130,6 @@ These are the keys assigned to control the camera and the options of the renderi
 | Look Left               | Left Arrow    |
 | Enable/Disable texture  | T             |
 | Enable/Disable borders  | B             |
-
-
-## How to convert a regular image file to a C array:
-To do this I've used the online tool named Piskel. This tool is designed to make pixel art sprites but it lets you upload an image
-and then export it as a C file. I don't recommend using textures with more than 100x100px size.
-
-After exporting as C file, as mentioned previously, you have to substitute the texture.c file with the new texture file. The name must be "texture.c"
-The array in the C file must be named "texture" and you have to remove the const value of the array.
 
 
 

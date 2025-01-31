@@ -1,12 +1,12 @@
 
 INCLUDES = -I./include
 
-LIBS = -lSDL2 -lm
+LIBS = -lSDL2 -lpng -lm
 
 MAIN = ./bin/3drenderer
 
 MODEL = spyroDragon
-TEXTURE = -t texture
+TEXTURE = -t
 
 $(MAIN): ./source/*.c ./include/*.h
 	gcc -Wall ./source/*.c $(INCLUDE) $(LIBS) -o $(MAIN)

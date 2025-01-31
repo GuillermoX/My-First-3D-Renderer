@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include <png.h>  
 #include <string.h>
 #include <stddef.h>
 
@@ -121,6 +122,16 @@ typedef struct
 	float aspect_ratio;
 } camera_t;
 
+typedef struct 
+{
+	int height;
+	int width;
+	unsigned char text_set;
+	png_bytep* row_pointers;	
+
+} texture_t;
+
+
 typedef struct
 {
 	char name[20];
@@ -132,6 +143,7 @@ typedef struct
 	bool borders_on;
 	char model_path[40];
 	char text_path[30];
+	texture_t texture;
 } scene_t;
 
 
@@ -152,6 +164,7 @@ void stop_scene();
 //--------- 3D RENDERER FUNCTIONS ----------------------------
 
 void initialize_meshes(scene_t* scene, mesh_t meshes[]);
+int initialize_texture(scene_t* scene);
 void render_meshes(scene_t* scene, mesh_t meshes[]);
 void process_triangle(scene_t* scene, triangle_t* tri, triangle_queue_t* tri_q);
 int triangle_clip_against_plane(vec3d_t* plane_p, vec3d_t* plane_n, triangle_t* tri_in, triangle_t* tri_out1, triangle_t* tri_out2);
@@ -159,6 +172,7 @@ void raster_triangle(scene_t* scene, triangle_t* tri);
 //void GPC_paint_triangle(scene_t* scene, screen_vect_t* v1, screen_vect_t* v2, screen_vect_t* v3, vec2d_t* t1, vec2d_t* t2, vec2d_t* t3, rgb_t color);
 void paint_triangle(scene_t* scene, screen_vect_t v1, screen_vect_t v2, screen_vect_t v3, vec2d_t t1, vec2d_t t2, vec2d_t t3, float bright);
 void get_color_texture(uint32_t texture[][TEXTURE_W*TEXTURE_H], float u, float v, int height, int width, rgb_t* color);
+void get_color_texture_png(scene_t* scene, float u, float v, rgb_t* color);
 
 //--------- TRIANGLE QUEUE FUNCTIONS -------------------------------------
 void ini_triangle_queue(triangle_queue_t* q, triangle_t tri_array[], int max);

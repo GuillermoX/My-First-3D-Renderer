@@ -21,14 +21,19 @@ int main(int argc, char *argv[])
 		strcpy(scene.model_path, path);
 		printf("\nModel: %s", scene.model_path);
 		if(argc == 2) scene.texture_mode = 0;
-		else if(argc == 3 && strcmp(argv[2], "-t") == 0) scene.texture_mode = TEXT_UV_MODEL_OFF;
+		else if(argc == 3 && strcmp(argv[2], "-t") == 0)
+		{
+			scene.texture.text_set = 0;
+		 	scene.texture_mode = TEXT_UV_MODEL_OFF;
+		}
 		else if(argc == 4 && strcmp(argv[2], "-t") == 0)
 		{
+			scene.texture.text_set = 1;
 			scene.texture_mode = TEXT_UV_MODEL_ON;
 
 			strcpy(path, TEXTURES_PATH);
 			strcat(path, argv[3]);
-			strcat(path, ".c");
+			strcat(path, ".png");
 			strcpy(scene.text_path, path);
 			printf("\tTexture: %s", scene.text_path);
 		}
