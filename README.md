@@ -53,6 +53,24 @@ Here you have the youtube video preview of the project.
 - FPS drop when getting too close to the model with texture. This is because of the simple and inefficient method of using a for loop to
   raster each pixel of the triangles.
 
+## Project structure
+```
+.
+├── bin
+│   └── 3drenderer
+├── data
+│   ├── model.obj 
+│   └── textures
+│       └── textureMap.png
+├── include
+│   └── 3drenderer.h
+├── makefile
+├── README.md
+└── source
+    ├── 3drenderer.c
+    └── main.c
+```
+
 ## Dependencies:
 - SDL2 library: Create and paint pixels on the screen. It's also used to catch the keys to control de camera.
 - libpng: Read PNG texture file.
