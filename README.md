@@ -109,7 +109,7 @@ make clean
 
 
 ## Bynary run flags:
-The executable file of the project is stored in the bin directory. Is called "3drenderer".
+The executable file of the project is stored in the bin directory. It's called "3drenderer".
 
 To render a specific model is necessary to add the .obj file into the data directory and then add the following parameter
 when executing:
