@@ -48,8 +48,6 @@ Here you have the youtube video preview of the project.
   This is due to the simple depth calculus done to sort the triangles. Each triangle has a depth assigned
   based on the arithmetic mean of the three vertices depth which is very imprecise.
 - Only vertices, faces and textures UV information from .obj is interpreted.
-- To change the texture, is necessary to manually change the texture.c file from source directory. In future I'll add
-  the possibility to specify the texture file without manipulating the code.
 - FPS drop when getting too close to the model with texture. This is because of the simple and inefficient method of using a for loop to
   raster each pixel of the triangles.
 
